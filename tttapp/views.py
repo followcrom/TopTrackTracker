@@ -138,6 +138,9 @@ def home(request):
 
 import requests
 import logging
+import time
+from datetime import datetime, timedelta
+from django.http import JsonResponse
 
 
 def lastfm_play_count(username, api_key):
@@ -173,3 +176,69 @@ def lastfm_play_count(username, api_key):
         logging.error(f"An error occurred: {e}")
 
     return lastfm_info
+
+
+# -----------------------------------------
+
+LASTFM_BASE_URL = "https://ws.audioscrobbler.com/2.0/"
+
+
+def _lastfm_call(method, api_key, params=None):
+    base_params = {"method": method, "api_key": api_key, "format": "json"}
+    if params:
+        base_params.update(params)
+    response = requests.get(LASTFM_BASE_URL, params=base_params)
+    response.raise_for_status()
+    return response.json()
+
+
+def _get_top_tracks(username, api_key, limit=200):
+    return _lastfm_call("user.getTopTracks", api_key, {"user": username, "period": "overall", "limit": limit})
+
+
+def _get_recent_tracks_since(username, api_key, days=90):
+    since = datetime.now() - timedelta(days=days)
+    from_ts = int(time.mktime(since.timetuple()))
+    results = []
+    page = 1
+    while True:
+        data = _lastfm_call("user.getRecentTracks", api_key, {
+            "user": username, "from": from_ts, "limit": 200, "page": page
+        })
+        tracks = data["recenttracks"]["track"]
+        if not tracks:
+            break
+        results.extend(tracks)
+        total_pages = int(data["recenttracks"]["@attr"]["totalPages"])
+        if page >= total_pages:
+            break
+        page += 1
+    return results
+
+
+@ratelimit(key="ip", rate="10/m", block=True)
+def forgotten_favourites(request):
+    api_key = settings.LASTFM_API_KEY
+    username = settings.LASTFM_USERNAME
+
+    try:
+        top = _get_top_tracks(username, api_key)
+        recent = _get_recent_tracks_since(username, api_key)
+
+        recent_keys = {
+            (t["artist"]["#text"].lower(), t["name"].lower())
+            for t in recent
+            if isinstance(t, dict) and "artist" in t
+        }
+
+        forgotten = [
+            {"artist": t["artist"]["name"], "track": t["name"], "playcount": t["playcount"]}
+            for t in top["toptracks"]["track"]
+            if (t["artist"]["name"].lower(), t["name"].lower()) not in recent_keys
+        ][:20]
+
+        return JsonResponse({"suggestions": forgotten})
+
+    except Exception as e:
+        logging.error(f"forgotten_favourites error: {e}")
+        return JsonResponse({"error": str(e)}, status=500)

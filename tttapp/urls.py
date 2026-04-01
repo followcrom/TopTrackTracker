@@ -6,6 +6,7 @@ from .views import (
     top_tracks_short_term,
     top_tracks_medium_term,
     top_tracks_long_term,
+    forgotten_favourites,
 )
 
 from .trending_tracks import (
@@ -50,4 +51,5 @@ urlpatterns = [
     path("callback/", spotify_callback, name="spotify_callback"),
     path("recommendations/", get_recommendations, name="get_recommendations"),
     path("show_recommendations/", show_recommendations, name="show_recommendations"),
+    path("forgotten-favourites/", forgotten_favourites, name="forgotten_favourites"),
 ]

@@ -1,5 +1,5 @@
 from spotipy import Spotify
-from spotipy.oauth2 import SpotifyOAuth
+from spotipy.oauth2 import SpotifyOAuth, SpotifyOauthError
 import time
 from django.conf import settings
 from django.shortcuts import redirect
@@ -79,7 +79,16 @@ def get_spotipy_client(request):
     if current_time > expires_at:
         print("Getting fresh access token...")
         sp_oauth = get_spotify_oauth()
-        token_info = sp_oauth.refresh_access_token(token_info["refresh_token"])
+        try:
+            token_info = sp_oauth.refresh_access_token(token_info["refresh_token"])
+        except SpotifyOauthError as e:
+            # From 2026-07-20, Spotify refresh tokens expire 6 months after the
+            # user's original authorization, regardless of activity. A refresh
+            # against an expired/revoked token raises here. Clear the stale token
+            # so callers redirect to spotify_auth and the user re-authorizes.
+            print(f"Refresh token invalid/expired, re-auth required: {e}")
+            request.session.pop("token_info", None)
+            return None
         print("Access token refreshed")
         print("\nAccess Token: ", token_info["access_token"])
         print("\nRefresh info: ", token_info["refresh_token"])

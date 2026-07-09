@@ -62,6 +62,7 @@
     <th>Genres</th>
     <th>Listen</th>
     <th>More</th>
+    <th>Playlist</th>
     <th>Delete</th>
   </tr>
 
@@ -85,6 +86,20 @@
       >
     </td>
     <td class="add">
+      <form class="trending-form" method="post" action="{% url 'add_to_playlist' %}">
+        {% csrf_token %}
+        <input type="hidden" name="artist" value="{{ track.artist }}" />
+        <input type="hidden" name="song" value="{{ track.song }}" />
+        <input type="hidden" name="uri" value="{{ track.uri }}" />
+        <input type="hidden" name="release_year" value="{{ track.release_year }}" />
+        <input type="hidden" name="popularity" value="{{ track.popularity }}" />
+        <input type="hidden" name="album" value="{{ track.album }}" />
+        <input type="hidden" name="genres" value="{{ track.genres }}" />
+        <input type="hidden" name="artist_uri" value="{{ track.artist_uri }}" />
+        <button type="submit">Add to Playlist</button>
+      </form>
+    </td>
+    <td class="add">
       <form action="{% url 'delete_trending_track' track.id %}" method="post">
         {% csrf_token %}
         <button type="submit" onclick="return confirm('Are you sure?')">
@@ -98,10 +113,41 @@
 
 <br /><br />
 
-{% if messages %}
 <!-- this is pulling in jquery from a CDN -->
 <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
 
+<script>
+  $(document).ready(function () {
+    $(".trending-form")
+      .off("submit")
+      .on("submit", function (e) {
+        e.preventDefault();
+        $.ajax({
+          type: "POST",
+          url: $(this).attr("action"),
+          data: $(this).serialize(),
+          success: function (response) {
+            var messageArea = $("#message-area");
+            messageArea.text(response.message);
+            messageArea.css({
+              color: response.success ? "#54E772" : "#E75480",
+            });
+
+            setTimeout(function () {
+              messageArea.text("");
+            }, 2500);
+          },
+          error: function (xhr, status, error) {
+            var messageArea = $("#message-area");
+            messageArea.text("An error occurred: " + error);
+            messageArea.css("color", "red");
+          },
+        });
+      });
+  });
+</script>
+
+{% if messages %}
 <script>
   $(document).ready(function () {
       var messagesList = [

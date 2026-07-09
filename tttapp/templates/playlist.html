@@ -1,0 +1,155 @@
+{% extends "base.html" %} {% block content %}
+
+<h1>{{ name }}</h1>
+
+<style>
+  .badge {
+    display: inline-block;
+    padding: 2px 9px;
+    border-radius: 10px;
+    font-size: 0.8em;
+    font-weight: bold;
+  }
+
+  .badge-top-s {
+    background: #fd7e14;
+    color: #000;
+  }
+
+  .badge-top-m {
+    background: #4a9eff;
+    color: #000;
+  }
+
+  .badge-top-l {
+    background: #b968f0;
+    color: #000;
+  }
+
+  .badge-rec {
+    background: #1db954;
+    color: #000;
+  }
+
+  .badge-user {
+    background: #ccc;
+    color: #000;
+  }
+
+  .playlist-controls {
+    margin: 10px;
+    color: #ccc;
+    font-size: 1.8em;
+    font-family: Arial, Helvetica, sans-serif;
+  }
+
+  .playlist-controls input {
+    width: 55px;
+    text-align: center;
+  }
+
+  /* Playlist-table-only tweaks go below. These override trend_table.css
+     without affecting the Trending page, e.g.:
+  .playlist_table td { padding: 4px 12px; }
+  .playlist_table .song { font-style: italic; }
+  */
+  .playlist_table .source,
+  .playlist_table .popularity,
+  .playlist_table .delete {
+    width: 1%;
+    white-space: nowrap;
+  }
+</style>
+
+<div id="message-area">{{ message }}</div>
+
+<div class="topRow">
+  <button id="playPlaylistButton" class="button" style="color: greenyellow">
+    Play in Spotify
+  </button>
+
+  <form method="get" class="playlist-controls">
+    Tracks:
+    <input type="number" name="tracks" value="{{ total }}" min="1" max="100" />
+    New songs:
+    <input type="number" name="recs" value="{{ rec_count }}" min="0" max="20" />
+    <button type="submit" class="button" style="color: #2fff9b">
+      Generate Tracks
+    </button>
+  </form>
+
+  <form action="{% url 'delete_all_playlist_tracks' %}" method="post">
+    {% csrf_token %}
+    <button type="submit" class="button" style="color: red"
+      onclick="return confirm('Are you sure you want to delete all tracks?')">
+      Delete All Tracks
+    </button>
+  </form>
+</div>
+
+<table class="trend_table playlist_table">
+  <tr>
+    <th>#</th>
+    <th class="source">From</th>
+    <th>Artist</th>
+    <th>Song</th>
+    <th class="popularity">Popularity</th>
+    <th>Listen</th>
+    <th class="delete">Delete</th>
+  </tr>
+
+  {% for track in playlist %}
+  <tr>
+    <td class="counter">{{ forloop.counter }}</td>
+    <td class="source">
+      {% if track.source_label == "NEW" %}
+      <span class="badge badge-rec">NEW</span>
+      {% elif track.source_label == "USER" %}
+      <span class="badge badge-user">USER</span>
+      {% elif track.source_label %}
+      <span class="badge badge-top-{{ track.source_label|first|lower }}">{{ track.source_label }}</span>
+      {% endif %}
+    </td>
+    <td class="artist">{{ track.artist }}</td>
+    <td class="song">{{ track.song }}</td>
+    <td class="popularity">{{ track.popularity }}</td>
+    <td class="uris">
+      <i class="fa-brands fa-spotify"></i>
+      <a class="uri" href="{{ track.uri }}" target="_blank">Open <i>{{ track.song }}</i></a>
+    </td>
+    <td class="delete">
+      <form action="{% url 'delete_playlist_track' track.id %}" method="post">
+        {% csrf_token %}
+        <button type="submit" onclick="return confirm('Are you sure?')">
+          Delete
+        </button>
+      </form>
+    </td>
+  </tr>
+  {% endfor %}
+</table>
+
+<br /><br />
+
+<script>
+  document
+    .getElementById("playPlaylistButton")
+    .addEventListener("click", function () {
+      var messageArea = document.getElementById("message-area");
+      messageArea.textContent = "Starting playback...";
+      messageArea.style.color = "#ccc";
+
+      fetch("{% url 'play_playlist' %}")
+        .then((response) => response.json())
+        .then((data) => {
+          messageArea.textContent = data.message;
+          messageArea.style.color = data.success ? "#54E772" : "#E75480";
+        })
+        .catch((error) => {
+          messageArea.textContent = "Error sending request: " + error;
+          messageArea.style.color = "#E75480";
+        });
+    });
+</script>
+
+{% endblock %}

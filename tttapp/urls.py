@@ -6,7 +6,6 @@ from .views import (
     top_tracks_short_term,
     top_tracks_medium_term,
     top_tracks_long_term,
-    forgotten_favourites,
 )
 
 from .trending_tracks import (
@@ -19,6 +18,14 @@ from .trending_tracks import (
     upload_trending_tracks,
     get_recommendations,
     show_recommendations,
+)
+
+from .playlist_builder import (
+    build_playlist,
+    play_playlist,
+    add_to_playlist,
+    delete_playlist_track,
+    delete_all_playlist_tracks,
 )
 
 from .spotify_client import spotify_auth, spotify_callback
@@ -51,5 +58,17 @@ urlpatterns = [
     path("callback/", spotify_callback, name="spotify_callback"),
     path("recommendations/", get_recommendations, name="get_recommendations"),
     path("show_recommendations/", show_recommendations, name="show_recommendations"),
-    path("forgotten-favourites/", forgotten_favourites, name="forgotten_favourites"),
+    path("playlist-builder/", build_playlist, name="build_playlist"),
+    path("play-playlist/", play_playlist, name="play_playlist"),
+    path("add-to-playlist/", add_to_playlist, name="add_to_playlist"),
+    path(
+        "delete-playlist-track/<int:track_id>/",
+        delete_playlist_track,
+        name="delete_playlist_track",
+    ),
+    path(
+        "delete-all-playlist-tracks/",
+        delete_all_playlist_tracks,
+        name="delete_all_playlist_tracks",
+    ),
 ]

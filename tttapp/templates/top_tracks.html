@@ -25,6 +25,7 @@
     <th>Release</th>
     <th>Listen</th>
     <th>Add</th>
+    <th>Playlist</th>
   </tr>
 
   {% for track in tracks %}
@@ -42,7 +43,7 @@
       >
     </td>
     <td class="add">
-      <form class="trending-form" method="post">
+      <form class="trending-form" method="post" action="{% url 'add_to_trending' %}">
         {% csrf_token %}
         <input type="hidden" name="artist" value="{{ track.artist }}" />
         <input type="hidden" name="song" value="{{ track.song }}" />
@@ -64,6 +65,24 @@
         <button type="submit">Add to Trending</button>
       </form>
     </td>
+    <td class="add">
+      <form class="trending-form" method="post" action="{% url 'add_to_playlist' %}">
+        {% csrf_token %}
+        <input type="hidden" name="artist" value="{{ track.artist }}" />
+        <input type="hidden" name="song" value="{{ track.song }}" />
+        <input type="hidden" name="uri" value="{{ track.uri }}" />
+        <input
+          type="hidden"
+          name="release_year"
+          value="{{ track.release_year }}"
+        />
+        <input type="hidden" name="popularity" value="{{ track.popularity }}" />
+        <input type="hidden" name="album" value="{{ track.album }}" />
+        <input type="hidden" name="genres" value="{{ track.genres }}" />
+        <input type="hidden" name="artist_uri" value="{{ track.artist_uri }}" />
+        <button type="submit">Add to Playlist</button>
+      </form>
+    </td>
   </tr>
   {% endfor %}
 </table>
@@ -83,7 +102,7 @@
         console.log("form event triggered");
         $.ajax({
           type: "POST",
-          url: "{% url 'add_to_trending' %}",
+          url: $(this).attr("action"),
           data: $(this).serialize(),
           success: function (response) {
             var messageArea = $("#message-area");

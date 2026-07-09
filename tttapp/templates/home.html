@@ -5,17 +5,19 @@
 <div class="home-content">
 
     {% if user.is_authenticated %}
-    <h2>👋 Hi {{ user.username }}! Here's your top 25:</h2>
+    <h2>👋 Yo Breezy! Here's your top 10 for:</h2>
 
+    {% for period in lastfm_periods %}
+    <h3>{{ period.label }}</h3>
     <ul>
-        {% for track in lastfm|slice:":25" %} <!-- tracks to display -->
+        {% for track in period.tracks %}
         <li>
             {{ forloop.counter }}. <strong>{{ track.name|slice:":30" }}</strong> by <strong>{{ track.artist }}</strong>
             (Playcount: {{ track.playcount }})
         </li>
-        <!-- chars to display -->
         {% endfor %}
     </ul>
+    {% endfor %}
 
     {% else %}
 

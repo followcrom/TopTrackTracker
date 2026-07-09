@@ -52,6 +52,9 @@ else:
     DEBUG = False
     ALLOWED_HOSTS = ["ttt.followcrom.com", "www.ttt.followcrom.com"]
     SPOTIFY_REDIRECT_URI = "https://ttt.followcrom.com/callback/"
+    # Site is HTTPS-only behind nginx: never send session/CSRF cookies in clear
+    SESSION_COOKIE_SECURE = True
+    CSRF_COOKIE_SECURE = True
     # S3 Static settings
     AWS_ACCESS_KEY_ID = os.environ.get("AWS_ACCESS_KEY_ID")
     AWS_SECRET_ACCESS_KEY = os.environ.get("AWS_SECRET_ACCESS_KEY")
@@ -72,17 +75,6 @@ else:
 #     "ttt.followcrom.com",
 # ]
 
-CORS_ALLOW_ALL_ORIGINS = True
-
-# CORS_ALLOWED_ORIGINS = [
-#     "https://ttt.followcrom.online",
-#     "http://localhost:8000",
-# ]
-
-CORS_ALLOW_METHODS = ["DELETE", "GET", "OPTIONS", "PATCH", "POST", "PUT"]
-# CORS_ALLOW_HEADERS = []
-
-
 INSTALLED_APPS = [
     "django.contrib.admin",
     "django.contrib.auth",
@@ -91,11 +83,9 @@ INSTALLED_APPS = [
     "django.contrib.messages",
     "django.contrib.staticfiles",
     "tttapp",
-    "corsheaders",
 ]
 
 MIDDLEWARE = [
-    "corsheaders.middleware.CorsMiddleware",
     "django.middleware.security.SecurityMiddleware",
     "django.contrib.sessions.middleware.SessionMiddleware",
     "django.middleware.common.CommonMiddleware",

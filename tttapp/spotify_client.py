@@ -50,8 +50,9 @@ def spotify_callback(request):
 
         token_info = sp_oauth.get_access_token(code)
         request.session["token_info"] = token_info
+        # NB: never print token_info itself - access/refresh tokens end up in
+        # the gunicorn/journal logs
         print("\nCallback token info saved to session")
-        print("\nCallback token info: ", token_info)
 
         # Retrieve the stored URL or default to 'home' if not found
         redirect_url = request.session.get("pre_auth_url", "home")
@@ -90,8 +91,6 @@ def get_spotipy_client(request):
             request.session.pop("token_info", None)
             return None
         print("Access token refreshed")
-        print("\nAccess Token: ", token_info["access_token"])
-        print("\nRefresh info: ", token_info["refresh_token"])
 
         request.session["token_info"] = token_info
         print("New token info saved to session")
@@ -101,7 +100,6 @@ def get_spotipy_client(request):
 
     else:
         print("Token is still valid.")
-        print("\nToken info: ", token_info)
 
     return Spotify(auth=token_info["access_token"])
 

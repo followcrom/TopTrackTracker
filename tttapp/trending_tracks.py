@@ -2,6 +2,7 @@ from django.http import JsonResponse
 from django.http import HttpResponse
 from django.shortcuts import render, redirect
 from django.contrib import messages
+from django.contrib.auth.decorators import login_required
 from django.views.decorators.http import require_POST
 
 from .models import TrendingTracks
@@ -9,6 +10,7 @@ from .models import TrendingTracks
 from .spotify_client import get_spotipy_client
 
 
+@login_required
 def add_to_trending(request):
     if request.method == "POST":
         artist_name = request.POST.get("artist")
@@ -74,6 +76,7 @@ def view_trending_tracks(request):
 # -----------------------------------------
 
 
+@login_required
 @require_POST
 def delete_trending_track(request, track_id):
     try:
@@ -89,6 +92,7 @@ def delete_trending_track(request, track_id):
 from django.urls import reverse
 
 
+@login_required
 @require_POST
 def delete_all_trending_tracks(request):
     TrendingTracks.objects.all().delete()
@@ -155,6 +159,7 @@ def export_trending_tracks(request):
 from io import TextIOWrapper
 from django.db import transaction
 
+@login_required
 @require_POST
 def upload_trending_tracks(request):
     uploads = []

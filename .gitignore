@@ -10,8 +10,8 @@ db.sqlite3
 *.db
 
 
-# Static files
-static
+# # Static files
+# static
 
 
 # Docs directory
@@ -28,3 +28,10 @@ access_trending_tracks.py
 display_users.py
 .cache
 users.json
+
+# Migrations
+tttapp/migrations
+
+
+# Nginx file
+ttt

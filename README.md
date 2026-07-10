@@ -1,40 +1,28 @@
-# followCrom's Top Track Tracker
+# 𝄞⨾💿✮˚.⋆ Top Track Tracker 🛤️
 
-![followCrom's Top Track Tracker](readme_img.png)
+<p align="center"><img src="readme_img.png" width="420" alt="followCrom's Top Track Tracker"/></p>
 
-Tracks your Spotify top tracks and builds a Playlist from those tracks plus Last.fm recommendations.
+Track your Spotify plays and generate a playlist from your top tracks and Last.fm recommendations.
 
-<br>
+---
 
-## Local Setup / Development 👨🏻‍💻
+## Local Development 👨🏻‍💻
 
 ```bash
-python3 -m venv .venv
 source .venv/bin/activate
-pip install -r requirements.txt
-```
 
-Copy `.env` into `tttracker/` (not tracked in git - get it from another machine or the droplet).
-
-```bash
-python manage.py migrate
 python manage.py runserver
 ```
 
-Visit http://127.0.0.1:8000/
+In `settings.py`, `PLATFORM=development` (default) gives you:
+- `DEBUG=True`
+- local static files
+- local Spotify redirect URI.
 
-Everything environment-specific is driven by a single `PLATFORM` variable, read
-in `settings.py`:
-
-- `PLATFORM=development` (the default if unset) gives you `DEBUG=True`,
-  `ALLOWED_HOSTS` for localhost, static files served from local `static/`, and
-  the local Spotify redirect URI.
-- Any other value (e.g. `PLATFORM=production`, set in `/var/www/ttt/tttracker/.env`
-  on the droplet) gives you `DEBUG=False`, HTTPS-only cookies, the production
-  `ALLOWED_HOSTS`/redirect URI, and `STATIC_URL` pointed at the S3 bucket.
-
-There's no need to hand-edit `settings.py` to switch between them - just set
-(or unset) `PLATFORM` in the relevant `.env`.
+On the VM, `PLATFORM="production"` is set in /var/www/ttt/tttracker/.env, giving you:
+- `DEBUG=False`
+- S3 static
+- HTTPS-only cookies.
 
 <br>
 
@@ -56,26 +44,34 @@ There's no need to hand-edit `settings.py` to switch between them - just set
 
 ## 🎨 Design / Static Files
 
-Static files are served from `static/` locally and from S3 in production -
-which one is active is decided purely by the `PLATFORM` variable described
-above, not by editing `settings.py`.
+Static files are served from `static/` locally and from S3 in production.
 
 To update static files (CSS/images) on the live site, edit them locally, then
 run `collectstatic` with production settings to push everything to the
-`static-ttt` S3 bucket (uses the `django-storages` backend configured via
-`STORAGES` in the production branch of `settings.py`):
+`static-ttt` S3 bucket:
 
 ```bash
 PLATFORM=production python manage.py collectstatic --noinput
+
+# --noinput skips the "are you sure?" confirmation prompt
 ```
 
-Add `--dry-run` first to preview what would be uploaded without touching S3.
-This also picks up Django admin's own CSS/JS (bundled via
+(`collectstatic` uses the `django-storages` backend configured via the
+`STORAGES` dictionary in **Platform-specific configurations** in `settings.py`)
+
+Add `--dry-run` first to preview what would be uploaded without touching S3:
+
+```bash
+PLATFORM=production python manage.py collectstatic --dry-run
+```
+
+Also uploaded are Django admin's own CSS/JS (bundled via
 `django.contrib.staticfiles`), so `/admin/` gets styled too.
 
-**Do not run this on the droplet** - always run it from your local machine so
-the bucket reflects your local `static/`, not whatever happens to be
-deployed on the server at the time.
+🚧 **Do not run this on the droplet**
+
+Always run it from your local machine so
+the bucket reflects your local `static/`, not whatever happens to be on the server at the time.
 
 <br>
 
@@ -88,10 +84,6 @@ change a field, run:
 python manage.py makemigrations
 python manage.py migrate
 ```
-
-Note: `tttapp/migrations/` is gitignored, so migration files don't travel via
-`git pull` - run `makemigrations` on each machine (dev, droplet) after a model
-change, rather than committing/copying the migration files themselves.
 
 Check the size of the SQLite file if disk space is ever a concern:
 
@@ -115,7 +107,7 @@ you need existing data (users, playlist tracks) on a new machine, copy the
 
 ## Users 🙋🏻
 
-### Superuser / Admin
+### Superuser / Admin 👱🏻‍♀️👩🏻‍🦰👩🏻
 
 Create a superuser (admin) account to access the Django admin interface:
 
@@ -123,7 +115,15 @@ Create a superuser (admin) account to access the Django admin interface:
 python manage.py createsuperuser
 ```
 
-### Regular Users
+Then log in at `/admin/` to manage users*.
+
+* My Nginx config puts HTTP Basic Auth in front of /admin/ (auth_basic_user_file /etc/nginx/.htpasswd_admin). Fine for me, but to use the Django admin interface without the extra password prompt, comment out the two `auth_basic` lines in `/etc/nginx/sites-available/ttt` and reload Nginx:
+
+```bash
+nginx -t && systemctl reload nginx
+```
+
+### Regular Users 👧🏾👩🏻‍🦰👩🏻
 
 To create regular users, you can either:
 
@@ -136,12 +136,10 @@ python create_users.py newuser securepassword
 
 # Or with an email:
 python create_users.py newuser securepassword newuser@example.com
-
-# The email field is optional in Django by default, so you don't have to
-# provide one if you don't need it.
+# The email field is optional
 ```
 
-### List Users
+### List Users 👧🏽👩🏻‍🦰👩🏻
 
 To list all users, you can either:
 
@@ -155,157 +153,80 @@ python display_users.py
 
 This also shows the Django settings module, which is useful for troubleshooting.
 
-<br>
+---
 
-## Production: DigitalOcean 🌊
+## Production / DigitalOcean 🌊
 
-### Initial Droplet Setup
-
-**Step 1**: Create a Digital Ocean Droplet.
-
-**Step 2**: SSH into it:
+The .env file includes `PLATFORM=production` to select production settings in `settings.py`. Ensure the .env file has the correct permissions:
 
 ```bash
-ssh -i ~/.ssh/digiocean root@<droplet-ip>
+chown www-data:www-data /var/www/ttt/tttracker/.env
+chmod 600 /var/www/ttt/tttracker/.env
 ```
 
-**Step 3**: Update and upgrade the system:
 
-```bash
-apt update && apt upgrade -y
-```
-
-**Step 4**: Install Python and Nginx:
-
-```bash
-apt install python3 python3-pip python3-venv nginx -y
-```
-
-On Ubuntu 22.04 droplets a reboot may be needed at this stage (`reboot`).
-
-**Step 5**: Create a directory for the app (`/var/www/` is the standard
-location for web apps):
-
-```bash
-mkdir /var/www/ttt
-cd /var/www/ttt
-```
-
-**Step 6**: Clone the repo:
-
-```bash
-git clone https://github.com/followcrom/TopTrackTracker.git ttt/
-```
-
-**Step 7**: Transfer the `.env` file (not in the repo):
-
-```bash
-scp -i ~/.ssh/digiocean .env root@<droplet-ip>:/var/www/ttt/tttracker
-```
-
-Make sure it includes `PLATFORM=production` (see [Local Setup](#local-setup--development-)),
-plus the correct permissions:
-
-```bash
-chown www-data:www-data /var/www/ttt/.env
-chmod 600 /var/www/ttt/.env
-```
-
-**Step 8**: Set up a virtual environment and install dependencies:
-
-```bash
-python3 -m venv .venv
-source .venv/bin/activate
-pip install -r requirements.txt
-pip install gunicorn
-```
-
-**Step 9**: Run migrations (see the [Database](#database-) section for the
-gitignored-migrations gotcha):
-
-```bash
-python manage.py migrate
-```
-
-**Do not run `collectstatic` here** - see the [Design](#-design--static-files)
-section above; it's always run from your local machine, not the droplet.
-
-**Step 10**: Create a systemd service file for Gunicorn:
-
-```bash
-nano /etc/systemd/system/gunicorn.service   # could also call this ttt.service
-```
-
-```ini
-[Unit]
-Description=gunicorn daemon for ttt
-After=network.target
-
-[Service]
-User=root
-Group=www-data
-WorkingDirectory=/var/www/ttt
-ExecStart=/var/www/ttt/.venv/bin/gunicorn --access-logfile /var/www/ttt/logs/ttt_access.log --error-logfile /var/www/ttt/logs/ttt_error.log --capture-output --workers 3 --bind unix:/var/www/ttt/tttracker.sock tttracker.wsgi:application --log-level=info
-
-[Install]
-WantedBy=multi-user.target
-```
-
-**Step 11**: Fix permissions so Nginx (`www-data`) can access the project:
-
-```bash
-chown -R www-data:www-data /var/www/ttt
-chmod -R 755 /var/www/ttt
-```
-
-**Step 12**: Start and enable Gunicorn:
-
-```bash
-systemctl daemon-reload   # if the unit file changed
-systemctl start gunicorn
-systemctl enable gunicorn
-systemctl status gunicorn
-```
-
-**Step 13**: Create an Nginx config file:
+Nginx config file:
 
 ```bash
 nano /etc/nginx/sites-available/ttt
 ```
 
 ```nginx
+# Block 1: The main HTTPS block for the canonical domain.
+# This is where your application runs.
 server {
-    listen 80;
-    server_name www.ttt.followcrom.com ttt.followcrom.com <droplet-ip>;
+    listen 443 ssl http2;
+    server_name ttt.followcrom.com;
 
-    location / {
+    # SSL configuration (no changes)
+    ssl_certificate /etc/letsencrypt/live/ttt.followcrom.com/fullchain.pem;
+    ssl_certificate_key /etc/letsencrypt/live/ttt.followcrom.com/privkey.pem;
+    include /etc/letsencrypt/options-ssl-nginx.conf;
+    ssl_dhparam /etc/letsencrypt/ssl-dhparams.pem;
+
+    # HSTS: browsers refuse plain-HTTP to this domain for a year after first visit
+    add_header Strict-Transport-Security "max-age=31536000" always;
+
+    # Django admin: challenged at the web-server level, before Django sees it
+    location /admin/ {
+        auth_basic "Admin";
+        auth_basic_user_file /etc/nginx/.htpasswd_admin;
+
+        # Alternative: fixed-IP allowlist. Comment out the two auth_basic
+        # lines above and uncomment these (find your IP: curl ifconfig.me)
+        # allow YOUR.HOME.IP;
+        # deny all;
+
         include proxy_params;
         proxy_pass http://unix:/var/www/ttt/tttracker.sock;
     }
 
-    # Static files are served from S3, not Nginx.
+    # Reverse proxy to your application (no changes)
+    location / {
+        include proxy_params;
+        proxy_pass http://unix:/var/www/ttt/tttracker.sock;
+    }
+}
+
+# Block 2: A single block to redirect the 'www' version and all HTTP traffic.
+server {
+    listen 80;
+    listen 443 ssl;
+    server_name www.ttt.followcrom.com;
+
+    # We need the SSL certs here too, just to handle https://www... requests
+    ssl_certificate /etc/letsencrypt/live/ttt.followcrom.com/fullchain.pem;
+    ssl_certificate_key /etc/letsencrypt/live/ttt.followcrom.com/privkey.pem;
+
+    # This one line redirects all traffic to the correct, canonical URL
+    return 301 https://ttt.followcrom.com$request_uri;
 }
 ```
-
-Certbot will rewrite this automatically once HTTPS is set up (below), adding
-the `listen 443 ssl` block and a redirect from port 80.
 
 Make sure `ALLOWED_HOSTS` in `settings.py` (production branch) includes every
 domain/IP used in `server_name` - Django returns *400 Bad Request* otherwise.
 
-**Step 14**: Symlink it into `sites-enabled`, test, and reload:
-
-```bash
-ln -s /etc/nginx/sites-available/ttt /etc/nginx/sites-enabled
-nginx -t
-systemctl reload nginx
-```
-
-*Reload* applies config changes without dropping active connections;
-*restart* (`systemctl restart nginx`) is more disruptive but guarantees a
-clean pickup of changes.
-
-**Step 15**: Configure the firewall:
+Configure the firewall:
 
 ```bash
 ufw allow 'Nginx Full'
@@ -314,62 +235,6 @@ ufw enable
 ufw status verbose
 ```
 
-**Step 16**: Restart Gunicorn first, then reload Nginx (Gunicorn runs the
-actual app code, so it needs to be current before Nginx starts routing to it):
-
-```bash
-systemctl restart gunicorn
-systemctl status gunicorn
-systemctl reload nginx
-systemctl status nginx
-```
-
-Visit your domain or droplet IP to confirm the app is up:
-[Top Track Tracker](https://ttt.followcrom.com/)
-
-<br>
-
-### HTTPS with Let's Encrypt 🔐
-
-```bash
-apt install certbot python3-certbot-nginx
-certbot --nginx -d ttt.followcrom.com -d www.ttt.followcrom.com
-```
-
-Verify auto-renewal:
-
-```bash
-certbot renew --dry-run
-```
-
-List certificates:
-
-```bash
-certbot certificates
-```
-
-Revoke/delete an unused certificate:
-
-```bash
-certbot revoke --cert-path /etc/letsencrypt/live/ttt.followcrom.com/fullchain.pem
-certbot delete
-```
-
-<br>
-
-### Picking Up New Code
-
-```bash
-cd /var/www/ttt
-cp db.sqlite3 db.sqlite3.bak-$(date +%F)   # back up first, migrations can be destructive
-git pull
-source .venv/bin/activate
-pip install -r requirements.txt
-python manage.py makemigrations tttapp   # migrations aren't in git - regenerate here
-python manage.py migrate
-systemctl restart gunicorn   # or ttt.service
-systemctl reload nginx
-```
 
 <br>
 

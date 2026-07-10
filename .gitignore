@@ -8,6 +8,7 @@ db.sqlite3
 # Database files #
 *.sqlite3
 *.db
+db.sqlite3.bak-2026-07-10
 
 
 # Docs directory

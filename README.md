@@ -2,33 +2,24 @@
 
 ![followCrom's Top Track Tracker](readme_img.png)
 
-Tracks your Spotify top tracks and lets you build a one-off listening
-queue (Playlist Builder) from your top tracks plus Last.fm recommendations.
+Tracks your Spotify top tracks and builds a Playlist from your top tracks plus Last.fm recommendations.
 
-<br>
-
-## Local Setup 👨🏻‍💻
+## Local Setup / Development 👨🏻‍💻
 
 ```bash
-python3 -m venv .venv
 source .venv/bin/activate
-pip install -r requirements.txt
-```
 
-Copy `.env` into `tttracker/` (not tracked in git - get it from another machine or the droplet).
-
-Apply migrations, then start the dev server:
-
-```bash
-python manage.py migrate
 python manage.py runserver
 ```
 
-Visit http://127.0.0.1:8000/
+In `settings.py`, `PLATFORM=development` (default) gives you:
+- `DEBUG=True`
+- local static files
+- local Spotify redirect URI.
 
-In `settings.py`, `PLATFORM=development` (default) gives you `DEBUG=True`, local
-static files, and the local Spotify redirect URI. Unset/other values switch to
-production settings (S3 static, HTTPS-only cookies).
+On the VM, `PLATFORM="production"` is set in /var/www/ttt/tttracker/.env, giving you:
+- S3 static
+- HTTPS-only cookies.
 
 <br>
 
@@ -70,14 +61,12 @@ bucket with whatever's on the server at the time.
 
 ## Database 💾
 
+Migrations are changes that alter the database schema. If you add a model or change a field, run:
+
 ```bash
 python manage.py makemigrations
 python manage.py migrate
 ```
-
-Note: `tttapp/migrations/` is gitignored, so migration files don't travel via
-`git pull` - run `makemigrations` on each machine (dev, droplet) after a model
-change, rather than committing/copying the migration files themselves.
 
 Check the size of the SQLite file if disk space is ever a concern:
 
@@ -97,18 +86,39 @@ sqlite3 db.sqlite3 "VACUUM;"
 
 ## Users 🙋🏻
 
+### Superuser / Admin
+
+Create a superuser (admin) account to access the Django admin interface:
+
 ```bash
 python manage.py createsuperuser
 ```
 
-Then create/manage regular users via `/admin/`, or with `create_users.py`
-(on the server, in `/var/www/ttt/`):
+### Regular Users
+
+To create regular users, you can either:
+
+1. use the Django admin interface at `/admin/`
+
+2. run the `create_users.py` script in `/var/www/ttt/` on the server:
 
 ```bash
 python create_users.py newuser securepassword
 ```
 
-List users via `/admin/auth/user/` or `python display_users.py`.
+### List Users
+
+To list all users, you can either:
+
+1. use the Django admin interface at `/admin/`
+
+2. run the `python display_users.py` script in `/var/www/ttt/` on the server:
+
+```bash
+python display_users.py
+```
+
+This also shows the Django settings module, which is useful for troubleshooting.
 
 <br>
 
@@ -135,6 +145,15 @@ Logs:
 ```bash
 journalctl -u gunicorn -f
 tail -f /var/log/nginx/error.log
+```
+
+To clear the Gunicorn logs, truncate rather than delete -
+Gunicorn holds the file open, so deleting it won't free disk space until the
+service restarts, whereas truncating in place is safe to do live:
+
+```bash
+truncate -s 0 /var/www/ttt/logs/ttt_access.log
+truncate -s 0 /var/www/ttt/logs/ttt_error.log
 ```
 
 <br>

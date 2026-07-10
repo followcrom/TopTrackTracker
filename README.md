@@ -1,6 +1,6 @@
 # 🔥 Top Track Tracker 🛤️
 
-<p align="center"><img src="readme_img.png" width="420" alt="followCrom's Top Track Tracker"/></p>
+<p align="center"><img src="readme_img.png" width="520" alt="followCrom's Top Track Tracker"/></p>
 
 Track your Spotify plays and generate a playlist from your top tracks and Last.fm recommendations.
 
@@ -27,32 +27,31 @@ On the VM, `PLATFORM="production"` is set in `/var/www/ttt/tttracker/.env`, givi
 ## Usage 🎧
 
 - **Top Tracks** (Short / Medium / Long Term):
-   - your Spotify top tracks, paged
+   - Your Spotify top tracks, paged
   10 at a time. Each track has an **Add to Playlist** button.
 - **Playlist Builder**:
   - **Generate Tracks**: tops up the playlist with a random sample of your top
-    tracks plus Last.fm recommendations (`tracks`/`recs` fields control totals).
+    tracks plus Last.fm recommendations.
   - **Play in Spotify**: starts playback of the playlist on your active
     Spotify device.
   - **Delete** / **Delete All Tracks**: remove one or all tracks.
-  - Badges show where each track came from:
-   - S/M/L (top tracks time range),
-   - NEW (Last.fm recommendation), or
-   - USER (added manually).
+  - **Badges** show where each track came from.
 
 <br>
 
-## 🎨 Design / Static Files
+## 🎨 Design / Static Files 🖼️
 
 Static files are served from `static/` locally and from S3 in production.
 
-To update static files (CSS/images) on the live site, edit them locally, then
+To update static files on the live site, edit them locally, then
 run `collectstatic` with production settings to push everything to the
 `static-ttt` S3 bucket:
 
 ```bash
 # --dry-run previews what would be uploaded without touching S3
 PLATFORM=production python manage.py collectstatic --dry-run
+
+PLATFORM=production python manage.py collectstatic
 
 # --noinput skips the "are you sure?" confirmation prompt
 PLATFORM=production python manage.py collectstatic --noinput
@@ -64,7 +63,7 @@ PLATFORM=production python manage.py collectstatic --noinput
 2️⃣ Also uploaded are Django admin's own CSS/JS (bundled via
 `django.contrib.staticfiles`), so `/admin/` gets styled too.
 
-🚧 **Do NOT run this on the droplet**
+3️⃣ **Do NOT run this on the droplet** 🚧
 
 Always run it from your local machine so
 the bucket reflects your local `static/`, not what is on the server.
@@ -103,9 +102,10 @@ Create a superuser (admin) account to access the Django admin interface:
 python manage.py createsuperuser
 ```
 
-Then log in at `/admin/` to manage users *.
+Then log in at `/admin/` to manage users.
 
-   My Nginx config puts HTTP Basic Auth in front of /admin/ (auth_basic_user_file /etc/nginx/.htpasswd_admin). To use the Django admin interface without the extra password prompt, comment out the two `auth_basic` lines in `/etc/nginx/sites-available/ttt` and reload Nginx:
+NOTE on locking down the admin interface via Nginx:
+My Nginx config puts HTTP Basic Auth in front of `/admin/` (_auth_basic_user_file /etc/nginx/.htpasswd_admin_). To use the admin interface without the extra password prompt, comment out the two `auth_basic` lines in `/etc/nginx/sites-available/ttt` and reload Nginx:
 
 ```bash
 nginx -t && systemctl reload nginx
@@ -122,7 +122,7 @@ To create regular users, you can either:
 ```bash
 python create_users.py newuser securepassword
 
-# Or with an email (email field is optional):
+# Or with an email (email is optional):
 python create_users.py newuser securepassword newuser@example.com
 ```
 
@@ -142,7 +142,7 @@ python display_users.py
 
 <br>
 
-## Production / DigitalOcean 🌊
+## 📦 Production / DigitalOcean 🌊
 
 The `PLATFORM` environment variable is what determines which settings are used in `settings.py`.
 
@@ -150,14 +150,14 @@ The `PLATFORM` environment variable is what determines which settings are used i
 
 On the production server, the `.env` sets `PLATFORM=production` to select production settings.
 
-Ensure the .env file has the correct permissions:
+Ensure the `.env` file has the correct permissions:
 
 ```bash
 chown www-data:www-data /var/www/ttt/tttracker/.env
 chmod 600 /var/www/ttt/tttracker/.env
 ```
 
-### Nginx config
+### 🧩 Nginx config
 
 ```bash
 nano /etc/nginx/sites-available/ttt
@@ -217,7 +217,7 @@ server {
 
 <br>
 
-## 📝 Logs 🪵
+### Logs 🪵
 
 ```bash
 journalctl -u gunicorn -f
@@ -259,6 +259,8 @@ A *400 Bad Request* means the request's `Host` header
 isn't in `ALLOWED_HOSTS` (`settings.py`, production branch). Add the missing
 domain/IP.
 
+<br>
+
 ## Renew Secret Key 🔐
 
 ```python
@@ -270,16 +272,14 @@ print(get_random_secret_key())
 
 ## 📅 Commit Activity 🕹️
 
-![GitHub last commit](https://img.shields.io/github/last-commit/followcrom/followcromSite)
-![GitHub commit activity](https://img.shields.io/github/commit-activity/m/followcrom/followcromSite)
-![GitHub repo size](https://img.shields.io/github/repo-size/followcrom/followcromSite)
+![GitHub last commit](https://img.shields.io/github/last-commit/followcrom/TopTrackTracker)
+![GitHub commit activity](https://img.shields.io/github/commit-activity/m/followcrom/TopTrackTracker)
+![GitHub repo size](https://img.shields.io/github/repo-size/followcrom/TopTrackTracker)
 
 <br>
 
 ## ✍ Authors 
 
-🌍 followCrom: [followcrom.com](https://followcrom.com/index.html) 🌐
-
-📫 followCrom: [get in touch](https://followcrom.com/contact/contact.php) 👋
+📫 [Get in touch](https://followcrom.com/contact/contact.php) 👋
 
 [![Static Badge](https://img.shields.io/badge/followcrom-online-blue)](http://followcrom.com)

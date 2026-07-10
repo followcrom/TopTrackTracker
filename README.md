@@ -1,12 +1,10 @@
-# 𝄞⨾💿✮˚.⋆ Top Track Tracker 🛤️
+# 🔥 Top Track Tracker 🛤️
 
 <p align="center"><img src="readme_img.png" width="420" alt="followCrom's Top Track Tracker"/></p>
 
 Track your Spotify plays and generate a playlist from your top tracks and Last.fm recommendations.
 
----
-
-## Local Development 👨🏻‍💻
+## Development / Local 👨🏻‍💻
 
 ```bash
 source .venv/bin/activate
@@ -19,7 +17,7 @@ In `settings.py`, `PLATFORM=development` (default) gives you:
 - local static files
 - local Spotify redirect URI.
 
-On the VM, `PLATFORM="production"` is set in /var/www/ttt/tttracker/.env, giving you:
+On the VM, `PLATFORM="production"` is set in `/var/www/ttt/tttracker/.env`, giving you:
 - `DEBUG=False`
 - S3 static
 - HTTPS-only cookies.
@@ -28,17 +26,19 @@ On the VM, `PLATFORM="production"` is set in /var/www/ttt/tttracker/.env, giving
 
 ## Usage 🎧
 
-- **Top Tracks** (Short / Medium / Long Term): your Spotify top tracks, paged
+- **Top Tracks** (Short / Medium / Long Term):
+   - your Spotify top tracks, paged
   10 at a time. Each track has an **Add to Playlist** button.
-- **Playlist Builder**: shows everything added to the playlist so far.
+- **Playlist Builder**:
   - **Generate Tracks**: tops up the playlist with a random sample of your top
     tracks plus Last.fm recommendations (`tracks`/`recs` fields control totals).
-    Adds to the existing playlist rather than overwriting it.
   - **Play in Spotify**: starts playback of the playlist on your active
     Spotify device.
   - **Delete** / **Delete All Tracks**: remove one or all tracks.
-  - Badges show where each track came from: S/M/L (top tracks time range),
-    NEW (Last.fm recommendation), USER (added manually).
+  - Badges show where each track came from:
+   - S/M/L (top tracks time range),
+   - NEW (Last.fm recommendation), or
+   - USER (added manually).
 
 <br>
 
@@ -51,27 +51,23 @@ run `collectstatic` with production settings to push everything to the
 `static-ttt` S3 bucket:
 
 ```bash
-PLATFORM=production python manage.py collectstatic --noinput
+# --dry-run previews what would be uploaded without touching S3
+PLATFORM=production python manage.py collectstatic --dry-run
 
 # --noinput skips the "are you sure?" confirmation prompt
+PLATFORM=production python manage.py collectstatic --noinput
 ```
 
-(`collectstatic` uses the `django-storages` backend configured via the
-`STORAGES` dictionary in **Platform-specific configurations** in `settings.py`)
+1️⃣ `collectstatic` uses the `django-storages` backend configured via the
+`STORAGES` dictionary in **Platform-specific configurations** in `settings.py`
 
-Add `--dry-run` first to preview what would be uploaded without touching S3:
-
-```bash
-PLATFORM=production python manage.py collectstatic --dry-run
-```
-
-Also uploaded are Django admin's own CSS/JS (bundled via
+2️⃣ Also uploaded are Django admin's own CSS/JS (bundled via
 `django.contrib.staticfiles`), so `/admin/` gets styled too.
 
-🚧 **Do not run this on the droplet**
+🚧 **Do NOT run this on the droplet**
 
 Always run it from your local machine so
-the bucket reflects your local `static/`, not whatever happens to be on the server at the time.
+the bucket reflects your local `static/`, not what is on the server.
 
 <br>
 
@@ -85,29 +81,21 @@ python manage.py makemigrations
 python manage.py migrate
 ```
 
-Check the size of the SQLite file if disk space is ever a concern:
+`manage.py migrate` only applies schema changes - it doesn't migrate data. If
+you need existing data (users, playlist tracks) on a new machine, copy the
+`db.sqlite3` file itself.
+
+📐 Check the size of the SQLite file if disk space is ever a concern:
 
 ```bash
 du -sh db.sqlite3
 ```
 
-`DELETE`/`DROP TABLE` don't shrink the file - SQLite just marks the freed
-pages reusable. To actually reclaim disk space (stop the app first so
-nothing's writing to the DB):
-
-```bash
-sqlite3 db.sqlite3 "VACUUM;"
-```
-
-`manage.py migrate` only applies schema changes - it doesn't migrate data. If
-you need existing data (users, playlist tracks) on a new machine, copy the
-`db.sqlite3` file itself.
-
 <br>
 
 ## Users 🙋🏻
 
-### Superuser / Admin 👱🏻‍♀️👩🏻‍🦰👩🏻
+### Superuser / Admin 👱🏻‍♀️
 
 Create a superuser (admin) account to access the Django admin interface:
 
@@ -115,9 +103,9 @@ Create a superuser (admin) account to access the Django admin interface:
 python manage.py createsuperuser
 ```
 
-Then log in at `/admin/` to manage users*.
+Then log in at `/admin/` to manage users *.
 
-* My Nginx config puts HTTP Basic Auth in front of /admin/ (auth_basic_user_file /etc/nginx/.htpasswd_admin). Fine for me, but to use the Django admin interface without the extra password prompt, comment out the two `auth_basic` lines in `/etc/nginx/sites-available/ttt` and reload Nginx:
+   My Nginx config puts HTTP Basic Auth in front of /admin/ (auth_basic_user_file /etc/nginx/.htpasswd_admin). To use the Django admin interface without the extra password prompt, comment out the two `auth_basic` lines in `/etc/nginx/sites-available/ttt` and reload Nginx:
 
 ```bash
 nginx -t && systemctl reload nginx
@@ -134,12 +122,11 @@ To create regular users, you can either:
 ```bash
 python create_users.py newuser securepassword
 
-# Or with an email:
+# Or with an email (email field is optional):
 python create_users.py newuser securepassword newuser@example.com
-# The email field is optional
 ```
 
-### List Users 👧🏽👩🏻‍🦰👩🏻
+### List Users 👩🏻👧🏽👧🏾
 
 To list all users, you can either:
 
@@ -151,21 +138,26 @@ To list all users, you can either:
 python display_users.py
 ```
 
-This also shows the Django settings module, which is useful for troubleshooting.
+`display_users.py` also shows the Django settings module, which is useful for troubleshooting.
 
----
+<br>
 
 ## Production / DigitalOcean 🌊
 
-The .env file includes `PLATFORM=production` to select production settings in `settings.py`. Ensure the .env file has the correct permissions:
+The `PLATFORM` environment variable is what determines which settings are used in `settings.py`.
+
+`PLATFORM=development` is set by default and used for local development.
+
+On the production server, the `.env` sets `PLATFORM=production` to select production settings.
+
+Ensure the .env file has the correct permissions:
 
 ```bash
 chown www-data:www-data /var/www/ttt/tttracker/.env
 chmod 600 /var/www/ttt/tttracker/.env
 ```
 
-
-Nginx config file:
+### Nginx config
 
 ```bash
 nano /etc/nginx/sites-available/ttt
@@ -223,32 +215,16 @@ server {
 }
 ```
 
-Make sure `ALLOWED_HOSTS` in `settings.py` (production branch) includes every
-domain/IP used in `server_name` - Django returns *400 Bad Request* otherwise.
-
-Configure the firewall:
-
-```bash
-ufw allow 'Nginx Full'
-ufw allow OpenSSH
-ufw enable
-ufw status verbose
-```
-
-
 <br>
 
-### Logs
+## 📝 Logs 🪵
 
 ```bash
 journalctl -u gunicorn -f
 tail -f /var/log/nginx/error.log
 ```
 
-To clear the Gunicorn logs (e.g. `ttt_access.log` can contain the Spotify
-OAuth `code` param from `/callback/?code=...`), truncate rather than delete -
-Gunicorn holds the file open, so deleting it won't free disk space until the
-service restarts, whereas truncating in place is safe to do live:
+To clear the Gunicorn logs, truncate rather than delete:
 
 ```bash
 truncate -s 0 /var/www/ttt/logs/ttt_access.log
@@ -257,7 +233,7 @@ truncate -s 0 /var/www/ttt/logs/ttt_error.log
 
 <br>
 
-### Troubleshooting 🕵
+## 🛠️ Troubleshooting 🕵
 
 **Verify both services are running:**
 
@@ -266,48 +242,22 @@ systemctl status gunicorn
 systemctl status nginx
 ```
 
-**Nginx <-> Gunicorn socket issues:** if `ls -l /var/www/ttt/tttracker.sock`
-shows the socket missing, or Nginx can't reach it, try running Gunicorn
-manually to see errors directly:
+**Spotify token cache:**
 
-```bash
-/var/www/ttt/.venv/bin/gunicorn --access-logfile - --workers 3 --bind unix:/var/www/ttt/tttracker.sock tttracker.wsgi:application
-```
-
-Then re-check permissions:
-
-```bash
-chown -R www-data:www-data /var/www/ttt
-chmod -R 755 /var/www/ttt
-ls -l /var/www/ttt/tttracker.sock
-# expect: srwxrwxrwx 1 root www-data 0 <date> /var/www/ttt/tttracker.sock
-```
-
-**Spotify token cache:** `SpotifyOAuth` (in `spotify_client.py`) writes a
+`SpotifyOAuth` (in `spotify_client.py`) writes a
 `.cache` file to disk by default, separate from the token also stored in the
 Django session. If you change your Spotify account password, existing
-tokens are revoked and you'll see `invalid_grant: Refresh token revoked` -
-delete the cache file and re-authenticate:
+tokens are revoked and you'll see `invalid_grant: Refresh token revoked`. Delete the cache file and re-authenticate:
 
 ```bash
 rm .cache
 ```
 
-**Allowed Hosts:** a *400 Bad Request* means the request's `Host` header
-isn't in `ALLOWED_HOSTS` (`settings.py`, production branch) - add the missing
+**Allowed Hosts:**
+
+A *400 Bad Request* means the request's `Host` header
+isn't in `ALLOWED_HOSTS` (`settings.py`, production branch). Add the missing
 domain/IP.
-
-**Quick endpoint tests:**
-
-```bash
-curl --request GET \
-  --url 'https://api.spotify.com/v1/me/top/tracks?time_range=short_term&offset=0' \
-  --header 'Authorization: Bearer xxx'
-
-curl "https://ttt.followcrom.com/callback/?code=<auth-code>"
-```
-
-<br>
 
 ## Renew Secret Key 🔐
 
@@ -315,3 +265,21 @@ curl "https://ttt.followcrom.com/callback/?code=<auth-code>"
 from django.core.management.utils import get_random_secret_key
 print(get_random_secret_key())
 ```
+
+<br>
+
+## 📅 Commit Activity 🕹️
+
+![GitHub last commit](https://img.shields.io/github/last-commit/followcrom/followcromSite)
+![GitHub commit activity](https://img.shields.io/github/commit-activity/m/followcrom/followcromSite)
+![GitHub repo size](https://img.shields.io/github/repo-size/followcrom/followcromSite)
+
+<br>
+
+## ✍ Authors 
+
+🌍 followCrom: [followcrom.com](https://followcrom.com/index.html) 🌐
+
+📫 followCrom: [get in touch](https://followcrom.com/contact/contact.php) 👋
+
+[![Static Badge](https://img.shields.io/badge/followcrom-online-blue)](http://followcrom.com)

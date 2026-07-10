@@ -24,21 +24,6 @@ On the VM, `PLATFORM="production"` is set in `/var/www/ttt/tttracker/.env`, givi
 
 <br>
 
-## Usage 🎧
-
-- **Top Tracks** (Short / Medium / Long Term):
-   - Your Spotify top tracks, paged
-  10 at a time. Each track has an **Add to Playlist** button.
-- **Playlist Builder**:
-  - **Generate Tracks**: tops up the playlist with a random sample of your top
-    tracks plus Last.fm recommendations.
-  - **Play in Spotify**: starts playback of the playlist on your active
-    Spotify device.
-  - **Delete** / **Delete All Tracks**: remove one or all tracks.
-  - **Badges** show where each track came from.
-
-<br>
-
 ## 🎨 Design / Static Files 🖼️
 
 Static files are served from `static/` locally and from S3 in production.
@@ -156,6 +141,8 @@ Ensure the `.env` file has the correct permissions:
 chown www-data:www-data /var/www/ttt/tttracker/.env
 chmod 600 /var/www/ttt/tttracker/.env
 ```
+
+<br>
 
 ### 🧩 Nginx config
 

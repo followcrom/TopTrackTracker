@@ -1,5 +1,5 @@
 from spotipy import Spotify
-from spotipy.oauth2 import SpotifyOAuth
+from spotipy.oauth2 import SpotifyOAuth, SpotifyOauthError
 import time
 from django.conf import settings
 from django.shortcuts import redirect
@@ -50,8 +50,9 @@ def spotify_callback(request):
 
         token_info = sp_oauth.get_access_token(code)
         request.session["token_info"] = token_info
+        # NB: never print token_info itself - access/refresh tokens end up in
+        # the gunicorn/journal logs
         print("\nCallback token info saved to session")
-        print("\nCallback token info: ", token_info)
 
         # Retrieve the stored URL or default to 'home' if not found
         redirect_url = request.session.get("pre_auth_url", "home")
@@ -77,10 +78,19 @@ def get_spotipy_client(request):
     current_time = time.time()
     expires_at = token_info.get("expires_at", 0)
     if current_time > expires_at:
-        print("Refreshing token...")
+        print("Getting fresh access token...")
         sp_oauth = get_spotify_oauth()
-        token_info = sp_oauth.refresh_access_token(token_info["refresh_token"])
-        print("Token info refreshed")
+        try:
+            token_info = sp_oauth.refresh_access_token(token_info["refresh_token"])
+        except SpotifyOauthError as e:
+            # From 2026-07-20, Spotify refresh tokens expire 6 months after the
+            # user's original authorization, regardless of activity. A refresh
+            # against an expired/revoked token raises here. Clear the stale token
+            # so callers redirect to spotify_auth and the user re-authorizes.
+            print(f"Refresh token invalid/expired, re-auth required: {e}")
+            request.session.pop("token_info", None)
+            return None
+        print("Access token refreshed")
 
         request.session["token_info"] = token_info
         print("New token info saved to session")
@@ -90,7 +100,6 @@ def get_spotipy_client(request):
 
     else:
         print("Token is still valid.")
-        print("\nToken info: ", token_info)
 
     return Spotify(auth=token_info["access_token"])
 

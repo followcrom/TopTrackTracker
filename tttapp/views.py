@@ -37,6 +37,7 @@ def top_tracks(request, time_range, name, context):
     if offset + limit <= total_tracks:
         tracks = fetch_top_tracks(sp, time_range, limit=limit, offset=offset)
         print("Tracks in.")
+        # print(f"Tracks: {tracks}")
 
         if offset >= 40:
             show_forward = False
@@ -129,43 +130,68 @@ def home(request):
     lastfm_api_key = settings.LASTFM_API_KEY
     lastfm_username = settings.LASTFM_USERNAME
 
-    lastfm = lastfm_play_count(lastfm_username, lastfm_api_key)
+    periods = [
+        ("3month", "3 Months"),
+        ("12month", "12 Months"),
+    ]
 
-    return render(request, "home.html", {"welcome": welcome, "lastfm": lastfm})
+    lastfm_periods = []
+    for period, label in periods:
+        lastfm_periods.append(
+            {
+                "label": label,
+                "tracks": _top_tracks_for_period(lastfm_username, lastfm_api_key, period),
+            }
+        )
+
+    return render(
+        request, "home.html", {"welcome": welcome, "lastfm_periods": lastfm_periods}
+    )
 
 # -----------------------------------------
 
 import requests
 import logging
 
+EXCLUDED_ARTISTS = {"Cher", "Meat Loaf", "Sting", "O'Connor"}
 
-def lastfm_play_count(username, api_key):
-    lastfm_info = []
+
+def _top_tracks_for_period(username, api_key, period, limit=10):
+    tracks = []
 
     try:
-        # Define the API endpoint for getting user's top tracks
-        endpoint = f"http://ws.audioscrobbler.com/2.0/?method=user.gettoptracks&user={username}&api_key={api_key}&format=json"
-
-        # Send a GET request to the Last.fm API
-        response = requests.get(endpoint)
-
-        # Check if the request was successful
-        if response.status_code == 200:
-            data = response.json()
-            top_tracks = data["toptracks"]["track"]
-
-            # Extract the desired information for each track
-            for track in top_tracks:
-                track_info = {
+        data = _get_top_tracks(username, api_key, period=period, limit=limit)
+        for track in data["toptracks"]["track"]:
+            artist_name = track.get("artist", {}).get("name", "")
+            if artist_name in EXCLUDED_ARTISTS:
+                continue
+            tracks.append(
+                {
                     "name": track.get("name", ""),
-                    "artist": track.get("artist", {}).get("name", ""),
+                    "artist": artist_name,
                     "playcount": track.get("playcount", "0"),
                 }
-                lastfm_info.append(track_info)
-
+            )
     except Exception as e:
-        print(f"An error occurred: {e}")
-        # Log the error to the console
-        logging.error(f"An error occurred: {e}")
+        logging.error(f"An error occurred fetching {period} top tracks: {e}")
 
-    return lastfm_info
+    return tracks
+
+
+# -----------------------------------------
+
+LASTFM_BASE_URL = "https://ws.audioscrobbler.com/2.0/"
+
+
+def _lastfm_call(method, api_key, params=None):
+    base_params = {"method": method, "api_key": api_key, "format": "json"}
+    if params:
+        base_params.update(params)
+    response = requests.get(LASTFM_BASE_URL, params=base_params, timeout=10)
+    response.raise_for_status()
+    return response.json()
+
+
+def _get_top_tracks(username, api_key, period="overall", limit=200):
+    return _lastfm_call("user.getTopTracks", api_key, {"user": username, "period": period, "limit": limit})
+

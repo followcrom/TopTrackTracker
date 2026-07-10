@@ -13,55 +13,72 @@ BASE_DIR = Path(__file__).resolve().parent.parent
 dotenv_path = BASE_DIR / "tttracker" / ".env"
 # print("Path to .env:", dotenv_path)
 load_dotenv(dotenv_path=dotenv_path)
+if os.path.exists(dotenv_path):
+    print(".env file loaded successfully.")
+else:
+    print(".env file not found.")
 
 
 # ENVIROMENTAL VARIABLES
 SECRET_KEY = os.environ.get("SECRET_KEY")
-# if SECRET_KEY:
-#     print("Secret key loaded successfully.")
-# else:
-#     print("SECRET_KEY is not set!")
+if SECRET_KEY:
+    print("Secret key loaded successfully.")
+else:
+    print("SECRET_KEY is not set!")
 
-SPOTIFY_CLIENT_ID = os.environ.get("SPOTIFY_CLIENT_ID")
-SPOTIFY_CLIENT_SECRET = os.environ.get("SPOTIFY_CLIENT_SECRET")
-SPOTIFY_REDIRECT_URI = "https://ttt.followcrom.online/callback/"
-# SPOTIFY_REDIRECT_URI = "http://188.166.155.230/callback/"
-# SPOTIFY_REDIRECT_URI = "http://127.0.0.1:8000/callback/"
-
-# AWS S3 settings
-AWS_ACCESS_KEY_ID = os.environ.get("AWS_ACCESS_KEY_ID")
-AWS_SECRET_ACCESS_KEY = os.environ.get("AWS_SECRET_ACCESS_KEY")
-AWS_STORAGE_BUCKET_NAME = "static-ttt"
-AWS_S3_CUSTOM_DOMAIN = "%s.s3.amazonaws.com" % AWS_STORAGE_BUCKET_NAME
-AWS_DEFAULT_ACL = "public-read"
-AWS_S3_OBJECT_PARAMETERS = {"CacheControl": "max-age=86400"}
 
 # LastFM API settings
 LASTFM_API_KEY = os.environ.get("LASTFM_API_KEY")
 LASTFM_USERNAME = os.environ.get("LASTFM_USERNAME")
 
+SPOTIFY_CLIENT_ID = os.environ.get("SPOTIFY_CLIENT_ID")
+SPOTIFY_CLIENT_SECRET = os.environ.get("SPOTIFY_CLIENT_SECRET")
 
-# Turn off for production
-DEBUG = False
+# Determine platform
+PLATFORM = os.environ.get("PLATFORM", "Development").lower()
 
-ALLOWED_HOSTS = [
-    "localhost",
-    "127.0.0.1",
-    "188.166.155.230", # D.O. Public IP
-    "www.ttt.followcrom.online",
-    "ttt.followcrom.online",
-]
+# Platform-specific configurations
+if PLATFORM == "development":
+    DEBUG = True
+    ALLOWED_HOSTS = ["127.0.0.1", "localhost"]
+    SPOTIFY_REDIRECT_URI = "http://127.0.0.1:8000/callback/"
+    # Local static settings
+    STATIC_URL = "/static/"
+    STATICFILES_DIRS = [os.path.join(BASE_DIR, "static")]
+    print("Running in Development mode")
+    print("STATICFILES_DIRS:", STATICFILES_DIRS)
+    print(f"Running on platform: {PLATFORM}")
+else:
+    DEBUG = False
+    ALLOWED_HOSTS = ["ttt.followcrom.com", "www.ttt.followcrom.com"]
+    SPOTIFY_REDIRECT_URI = "https://ttt.followcrom.com/callback/"
+    # Site is HTTPS-only behind nginx: never send session/CSRF cookies in clear
+    SESSION_COOKIE_SECURE = True
+    CSRF_COOKIE_SECURE = True
+    # S3 Static settings
+    AWS_ACCESS_KEY_ID = os.environ.get("AWS_ACCESS_KEY_ID")
+    AWS_SECRET_ACCESS_KEY = os.environ.get("AWS_SECRET_ACCESS_KEY")
+    AWS_STORAGE_BUCKET_NAME = "static-ttt"
+    AWS_REGION = "eu-west-2"
+    AWS_S3_REGION_NAME = AWS_REGION  # setting name django-storages actually reads
+    AWS_S3_CUSTOM_DOMAIN = f"{AWS_STORAGE_BUCKET_NAME}.s3.{AWS_REGION}.amazonaws.com"
+    AWS_DEFAULT_ACL = "public-read"
+    AWS_S3_OBJECT_PARAMETERS = {"CacheControl": "max-age=86400"}
+    STATIC_URL = f"https://{AWS_S3_CUSTOM_DOMAIN}/"
+    STORAGES = {
+        "default": {"BACKEND": "django.core.files.storage.FileSystemStorage"},
+        "staticfiles": {"BACKEND": "storages.backends.s3boto3.S3Boto3Storage"},
+    }
+    print("Static files served from S3 at:", STATIC_URL)
+    print(f"Running on platform: {PLATFORM}")
 
-CORS_ALLOW_ALL_ORIGINS = True
 
-# CORS_ALLOWED_ORIGINS = [
-#     "https://ttt.followcrom.online",
-#     "http://localhost:8000",
+# ALLOWED_HOSTS = [
+#     "localhost",
+#     "127.0.0.1",
+#     "www.ttt.followcrom.com",
+#     "ttt.followcrom.com",
 # ]
-
-CORS_ALLOW_METHODS = ["DELETE", "GET", "OPTIONS", "PATCH", "POST", "PUT"]
-# CORS_ALLOW_HEADERS = []
-
 
 INSTALLED_APPS = [
     "django.contrib.admin",
@@ -70,12 +87,11 @@ INSTALLED_APPS = [
     "django.contrib.sessions",
     "django.contrib.messages",
     "django.contrib.staticfiles",
+    "storages",
     "tttapp",
-    "corsheaders",
 ]
 
 MIDDLEWARE = [
-    "corsheaders.middleware.CorsMiddleware",
     "django.middleware.security.SecurityMiddleware",
     "django.contrib.sessions.middleware.SessionMiddleware",
     "django.middleware.common.CommonMiddleware",
@@ -134,18 +150,6 @@ AUTH_PASSWORD_VALIDATORS = [
         "NAME": "django.contrib.auth.password_validation.NumericPasswordValidator",
     },
 ]
-
-# Local static settings. Need to be uncommented to `collectstatic`
-# STATIC_URL = "/static/"
-# STATICFILES_DIRS = [os.path.join(BASE_DIR, "static")]
-# print("STATICFILES_DIRS:", STATICFILES_DIRS)
-
-
-# S3 Static settings
-STATIC_LOCATION = "static"
-AWS_S3_CUSTOM_DOMAIN = "%s.s3.amazonaws.com" % AWS_STORAGE_BUCKET_NAME
-STATIC_URL = "https://%s/%s/" % (AWS_S3_CUSTOM_DOMAIN, STATIC_LOCATION)
-STATICFILES_STORAGE = "storages.backends.s3boto3.S3Boto3Storage"
 
 
 DEFAULT_AUTO_FIELD = "django.db.models.BigAutoField"

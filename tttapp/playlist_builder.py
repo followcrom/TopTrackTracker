@@ -202,8 +202,6 @@ def add_to_playlist(request):
             popularity=request.POST.get("popularity"),
             album=request.POST.get("album", ""),
             release_year=request.POST.get("release_year", ""),
-            genres=request.POST.get("genres", ""),
-            artist_uri=request.POST.get("artist_uri", ""),
             source_label="USER",
         )
         return JsonResponse({"success": True, "message": "✓ Added to playlist"})

@@ -32,14 +32,14 @@
   }
 
   .badge-user {
-    background: #ccc;
+    background: #ff69b4;
     color: #000;
   }
 
   .playlist-controls {
     margin: 10px;
-    color: #ccc;
-    font-size: 1.8em;
+    color: #006afe;
+    font-size: 1.2em;
     font-family: Arial, Helvetica, sans-serif;
   }
 
@@ -49,7 +49,7 @@
   }
 
   /* Playlist-table-only tweaks go below. These override trend_table.css
-     without affecting the Trending page, e.g.:
+     without affecting other pages that use it, e.g.:
   .playlist_table td { padding: 4px 12px; }
   .playlist_table .song { font-style: italic; }
   */
@@ -69,7 +69,7 @@
   </button>
 
   <form method="get" class="playlist-controls">
-    Tracks:
+    Favorites:
     <input type="number" name="tracks" value="{{ total }}" min="1" max="100" />
     New songs:
     <input type="number" name="recs" value="{{ rec_count }}" min="0" max="20" />

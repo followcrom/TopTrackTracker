@@ -60,26 +60,22 @@ Static files are served from `static/` locally and from S3 in production -
 which one is active is decided purely by the `PLATFORM` variable described
 above, not by editing `settings.py`.
 
-**⚠️ Known gap:** `settings.py` sets `STATIC_URL` to the S3 bucket URL in
-production, but doesn't currently configure `STATICFILES_STORAGE`/`STORAGES`
-(the `django-storages` backend) or `STATIC_ROOT`, even though `django-storages`
-and `boto3` are in `requirements.txt`. Without that wiring, `collectstatic`
-won't actually push files to S3 - if you rely on `collectstatic` to update
-static assets on the live site, verify it's still doing so before trusting
-this step; it may need `STATICFILES_STORAGE` (or the Django 4.2+ `STORAGES`
-dict) and `STATIC_ROOT` added back to the production branch of `settings.py`.
-
-Once that's confirmed working, the workflow is:
+To update static files (CSS/images) on the live site, edit them locally, then
+run `collectstatic` with production settings to push everything to the
+`static-ttt` S3 bucket (uses the `django-storages` backend configured via
+`STORAGES` in the production branch of `settings.py`):
 
 ```bash
-PLATFORM=production python manage.py collectstatic
+PLATFORM=production python manage.py collectstatic --noinput
 ```
 
-Confirm with `yes` to upload to the S3 bucket. No need to touch `settings.py`
-- setting `PLATFORM` for just that one command is enough.
+Add `--dry-run` first to preview what would be uploaded without touching S3.
+This also picks up Django admin's own CSS/JS (bundled via
+`django.contrib.staticfiles`), so `/admin/` gets styled too.
 
-**Do not run `collectstatic` on the droplet** - it will overwrite the S3
-bucket with whatever's on the server at the time.
+**Do not run this on the droplet** - always run it from your local machine so
+the bucket reflects your local `static/`, not whatever happens to be
+deployed on the server at the time.
 
 <br>
 
@@ -232,7 +228,7 @@ python manage.py migrate
 ```
 
 **Do not run `collectstatic` here** - see the [Design](#-design--static-files)
-section above; it would overwrite the S3 bucket with whatever's on the server.
+section above; it's always run from your local machine, not the droplet.
 
 **Step 10**: Create a systemd service file for Gunicorn:
 

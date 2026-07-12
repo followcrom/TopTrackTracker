@@ -12,7 +12,13 @@ source .venv/bin/activate
 python manage.py runserver
 ```
 
-In `settings.py`, `PLATFORM=development` (default) gives you:
+In `settings.py`:
+
+```bash
+PLATFORM = os.environ.get("PLATFORM", "Development").lower()
+```
+
+`PLATFORM=development` (set as default by above) gives you:
 - `DEBUG=True`
 - local static files
 - local Spotify redirect URI.

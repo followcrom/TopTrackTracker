@@ -1,5 +1,6 @@
 # views.py
 
+from django.conf import settings
 from django.shortcuts import redirect, render
 
 from django.contrib import messages
@@ -30,7 +31,7 @@ def top_tracks(request, time_range, name, context):
         return redirect("spotify_auth")
 
     offset = int(context["offset"])
-    limit = 10
+    limit = 3 if settings.DEBUG else 10
     total_tracks = 50
     show_forward = True
 
@@ -121,7 +122,6 @@ def top_tracks_long_term(request):
 
 
 # -----------------------------------------
-from django.conf import settings
 
 # @login_required
 def home(request):
@@ -131,18 +131,24 @@ def home(request):
     lastfm_username = settings.LASTFM_USERNAME
 
     periods = [
+        ("7day", "7 Days"),
+        ("1month", "1 Month"),
         ("3month", "3 Months"),
+        ("6month", "6 Months"),
         ("12month", "12 Months"),
+        ("overall", "All Time"),
     ]
 
     lastfm_periods = []
     for period, label in periods:
-        lastfm_periods.append(
-            {
-                "label": label,
-                "tracks": _top_tracks_for_period(lastfm_username, lastfm_api_key, period),
-            }
-        )
+        # In dev, only hit Last.fm for one period - enough to confirm the
+        # connection works without firing 6 calls on every page load.
+        if settings.DEBUG and period != "overall":
+            tracks = []
+        else:
+            tracks = _top_tracks_for_period(lastfm_username, lastfm_api_key, period)
+
+        lastfm_periods.append({"label": label, "tracks": tracks})
 
     return render(
         request, "home.html", {"welcome": welcome, "lastfm_periods": lastfm_periods}
@@ -167,7 +173,7 @@ def _top_tracks_for_period(username, api_key, period, limit=10):
                 continue
             tracks.append(
                 {
-                    "name": track.get("name", ""),
+                    "song": track.get("name", ""),
                     "artist": artist_name,
                     "playcount": track.get("playcount", "0"),
                 }

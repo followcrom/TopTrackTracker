@@ -25,6 +25,7 @@ access_trending_tracks.py
 display_users.py
 .cache
 users.json
+.claude/
 
 
 # Nginx file

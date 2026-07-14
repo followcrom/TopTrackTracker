@@ -1,16 +1,21 @@
+*,
+*::before,
+*::after {
+  box-sizing: border-box;
+}
+
 .main {
   display: flex;
   flex-direction: column;
   padding: 0px;
   margin: 0px;
-  background-color: #FFF;
+  background-color: #fff;
   min-height: 100vh;
 }
 
-
 .banner {
-  background-color: #54CAE7;
-  font-family: 'Reggae One', sans-serif;
+  background-color: #54cae7;
+  font-family: "Reggae One", sans-serif;
   font-size: 5vw;
   color: #004897;
   width: 100%;
@@ -20,28 +25,26 @@
 
 .banner .fa-brands {
   font-size: 6vw;
-  color: #1DB954;
-  background-color: #FFF;
-  border: #FFF solid 4px;
+  color: #1db954;
+  background-color: #fff;
+  border: #fff solid 4px;
   padding: 4px;
   border-radius: 180px;
   margin: 10px;
 }
-
 
 /* Navbar Styles */
 .navbar {
   display: flex;
   justify-content: center;
   align-items: center;
-  font-family: 'Open Sans', sans-serif;
+  font-family: "Open Sans", sans-serif;
   font-size: 1.5rem;
   background-color: #004897;
   color: white;
-  border-top: #FFF solid 5px;
+  border-top: #fff solid 5px;
   padding: 10px 20px;
 }
-
 
 .navbar .navbar-nav {
   list-style: none;
@@ -80,9 +83,8 @@
 
 /* End Navbar Styles */
 
-
 h3 {
-  font-family: 'Poppins', sans-serif;
+  font-family: "Poppins", sans-serif;
   font-weight: bold;
   font-size: 2em;
   color: #004897;
@@ -92,18 +94,17 @@ h3 {
   margin: 0px 0px;
 }
 
-
 h2 {
-  font-family: 'Slackey', cursive;
+  font-family: "Slackey", cursive;
   font-size: 2em;
-  color: #54CAE7;
+  color: #54cae7;
   text-align: center;
   padding: 0px;
   margin: 15px 0px;
 }
 
 h1 {
-  font-family: 'Poppins', sans-serif;
+  font-family: "Poppins", sans-serif;
   font-weight: bold;
   font-size: 3em;
   color: #004897;
@@ -113,13 +114,12 @@ h1 {
   margin: 15px 0px;
 }
 
-
 .home-content {
   display: flex;
   flex-direction: column;
   justify-content: center;
   align-items: center;
-  font-family: 'Raleway', sans-serif;
+  font-family: "Raleway", sans-serif;
   font-size: 1.2rem;
 }
 
@@ -129,6 +129,60 @@ h1 {
   cursor: pointer;
 }
 
+/* Tabs Styles */
+.tabs {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: center;
+  gap: 8px;
+  margin: 15px 0px;
+  width: 100%;
+  padding: 10px;
+  background-image: linear-gradient(
+    45deg,
+    /* Direction of the stripes */ #f0f0f0 25%,
+    /* First color: white, appears for 25% */ #ffffff 25%,
+    /* Second color: light gray, starts at 25% */ #ffffff 50%,
+    /* Second color continues until 50% */ #f0f0f0 50%,
+    /* First color reappears, continues for the next 25% */ #f0f0f0 75%,
+    /* First color continues */ #ffffff 75%
+      /* Second color starts at 75% and continues */
+  );
+  background-size: 56px 56px;
+}
+
+.tab-button {
+  cursor: pointer;
+  padding: 8px 16px;
+  background-color: #f0f0f0;
+  font-family: "Exo 2", sans-serif;
+  font-size: 1rem;
+  border: 2px solid #004897;
+  border-radius: 5px;
+  color: #004897;
+  transition: background-color 0.3s, color 0.3s;
+}
+
+.tab-button:hover,
+.tab-button:focus {
+  background-color: #54cae7;
+}
+
+.tab-button.active {
+  background-color: #004897;
+  color: #fff;
+}
+
+.tab-content {
+  display: none;
+  width: 100%;
+}
+
+.tab-content.active {
+  display: block;
+}
+
+/* End Tabs Styles */
 
 .topRow {
   display: flex;
@@ -136,30 +190,22 @@ h1 {
   justify-content: center;
   align-items: center;
   padding: 10px;
-  background-image: linear-gradient(45deg,
-      /* Direction of the stripes */
-      #f0f0f0 25%,
-      /* First color: white, appears for 25% */
-      #ffffff 25%,
-      /* Second color: light gray, starts at 25% */
-      #ffffff 50%,
-      /* Second color continues until 50% */
-      #f0f0f0 50%,
-      /* First color reappears, continues for the next 25% */
-      #f0f0f0 75%,
-      /* First color continues */
-      #ffffff 75%
+  background-image: linear-gradient(
+    45deg,
+    /* Direction of the stripes */ #f0f0f0 25%,
+    /* First color: white, appears for 25% */ #ffffff 25%,
+    /* Second color: light gray, starts at 25% */ #ffffff 50%,
+    /* Second color continues until 50% */ #f0f0f0 50%,
+    /* First color reappears, continues for the next 25% */ #f0f0f0 75%,
+    /* First color continues */ #ffffff 75%
       /* Second color starts at 75% and continues */
-    );
+  );
   background-size: 56px 56px;
 }
 
-
-
-
 .form-container {
   text-align: right;
-  font-family: 'Open Sans', Helvetica, Arial, sans-serif;
+  font-family: "Open Sans", Helvetica, Arial, sans-serif;
   font-size: 1em;
 }
 
@@ -167,29 +213,22 @@ h1 {
   margin-right: 8px;
 }
 
-
 /* Style the top 5 most played tracks block */
 ul {
   list-style-type: none;
   padding: 0;
-  background-image: linear-gradient(45deg,
-      /* Direction of the stripes */
-      #f0f0f0 25%,
-      /* First color: white, appears for 25% */
-      #ffffff 25%,
-      /* Second color: light gray, starts at 25% */
-      #ffffff 50%,
-      /* Second color continues until 50% */
-      #f0f0f0 50%,
-      /* First color reappears, continues for the next 25% */
-      #f0f0f0 75%,
-      /* First color continues */
-      #ffffff 75%
+  background-image: linear-gradient(
+    45deg,
+    /* Direction of the stripes */ #f0f0f0 25%,
+    /* First color: white, appears for 25% */ #ffffff 25%,
+    /* Second color: light gray, starts at 25% */ #ffffff 50%,
+    /* Second color continues until 50% */ #f0f0f0 50%,
+    /* First color reappears, continues for the next 25% */ #f0f0f0 75%,
+    /* First color continues */ #ffffff 75%
       /* Second color starts at 75% and continues */
-    );
+  );
   background-size: 56px 56px;
 }
-
 
 li {
   margin-bottom: 10px;
@@ -217,8 +256,8 @@ li:hover {
   cursor: pointer;
   padding: 10px 20px;
   margin: 10px 10px;
-  background-color: #54CAE7;
-  font-family: 'Exo 2', sans-serif;
+  background-color: #54cae7;
+  font-family: "Exo 2", sans-serif;
   font-size: 1.2rem;
   text-decoration: none;
   border: 2.5px solid white;
@@ -228,14 +267,14 @@ li:hover {
 
 .button:hover,
 .button:focus {
-  background-color: #6F42C1;
+  background-color: #6f42c1;
 }
 
 .login-button {
   cursor: pointer;
   padding: 10px 20px;
-  background-color: #54CAE7;
-  font-family: 'Exo 2', sans-serif;
+  background-color: #54cae7;
+  font-family: "Exo 2", sans-serif;
   font-size: 1.2rem;
   border: 2.5px solid #004897;
   border-radius: 5px;
@@ -253,7 +292,6 @@ li:hover {
 
 /* End Button Styles */
 
-
 .file-upload-input {
   width: 0.1px;
   height: 0.1px;
@@ -269,7 +307,7 @@ li:hover {
   text-align: center;
   font-size: 1.6em;
   padding: 10px;
-  font-family: 'Exo 2', sans-serif;
+  font-family: "Exo 2", sans-serif;
   display: none;
   z-index: 10;
   /* Make sure it stays on top */

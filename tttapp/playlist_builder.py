@@ -213,6 +213,55 @@ def add_to_playlist(request):
 
 
 @login_required
+def add_lastfm_track_to_playlist(request):
+    """Homepage Last.fm rows only carry artist/song (no Spotify URI), so
+    resolve the track on Spotify here, at add-click time, rather than
+    pre-searching every row on page load."""
+    if request.method != "POST":
+        return JsonResponse({"success": False, "message": "Invalid request."}, status=400)
+
+    artist = request.POST.get("artist", "").strip()
+    song = request.POST.get("song", "").strip()
+    if not artist or not song:
+        return JsonResponse({"success": False, "message": "Missing artist/song."}, status=400)
+
+    sp = get_spotipy_client(request)
+    if not sp:
+        return JsonResponse(
+            {"success": False, "message": "Log into Spotify first (visit Top Tracks), then try again."}
+        )
+
+    query = f"track:{song} artist:{artist}"
+    try:
+        results = sp.search(q=query, type="track", limit=1)
+    except SpotifyException as e:
+        logger.warning(f"Spotify search failed for {query}: {e.http_status}")
+        return JsonResponse({"success": False, "message": "Spotify search failed. Try again shortly."})
+
+    items = results.get("tracks", {}).get("items", [])
+    if not items:
+        return JsonResponse({"success": False, "message": "✗ Not found on Spotify"})
+
+    track = items[0]
+    uri = track["uri"]
+
+    if PlaylistTrack.objects.filter(uri=uri).exists():
+        return JsonResponse({"success": False, "message": "✗ Already in playlist"})
+
+    PlaylistTrack.objects.create(
+        artist=" & ".join(a["name"] for a in track["artists"]),
+        song=track["name"],
+        uri=uri,
+        popularity=track["popularity"],
+        source_label="USER",
+    )
+    return JsonResponse({"success": True, "message": "✓ Added to playlist"})
+
+
+# -----------------------------------------
+
+
+@login_required
 @require_POST
 def delete_playlist_track(request, track_id):
     PlaylistTrack.objects.filter(id=track_id).delete()

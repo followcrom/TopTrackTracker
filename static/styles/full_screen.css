@@ -131,44 +131,19 @@ h1 {
 
 /* Tabs Styles */
 .tabs {
-  display: flex;
   flex-wrap: wrap;
-  justify-content: center;
   gap: 8px;
-  margin: 15px 0px;
+  margin: 0px 0px;
   width: 100%;
-  padding: 10px;
-  background-image: linear-gradient(
-    45deg,
-    /* Direction of the stripes */ #f0f0f0 25%,
-    /* First color: white, appears for 25% */ #ffffff 25%,
-    /* Second color: light gray, starts at 25% */ #ffffff 50%,
-    /* Second color continues until 50% */ #f0f0f0 50%,
-    /* First color reappears, continues for the next 25% */ #f0f0f0 75%,
-    /* First color continues */ #ffffff 75%
-      /* Second color starts at 75% and continues */
-  );
-  background-size: 56px 56px;
 }
 
-.tab-button {
-  cursor: pointer;
-  padding: 8px 16px;
-  background-color: #f0f0f0;
-  font-family: "Exo 2", sans-serif;
-  font-size: 1rem;
-  border: 2px solid #004897;
-  border-radius: 5px;
-  color: #004897;
-  transition: background-color 0.3s, color 0.3s;
-}
-
-.tab-button:hover,
-.tab-button:focus {
-  background-color: #54cae7;
-}
-
-.tab-button.active {
+/* .tab-button reuses .button's look (see Button Styles below); only the
+   active-tab highlight is specific to tabs. Also pinned against
+   .button:hover, which is defined later in this file with equal
+   specificity and would otherwise win on hover. */
+.tab-button.active,
+.tab-button.active:hover,
+.tab-button.active:focus {
   background-color: #004897;
   color: #fff;
 }
@@ -190,16 +165,21 @@ h1 {
   justify-content: center;
   align-items: center;
   padding: 10px;
-  background-image: linear-gradient(
-    45deg,
-    /* Direction of the stripes */ #f0f0f0 25%,
-    /* First color: white, appears for 25% */ #ffffff 25%,
-    /* Second color: light gray, starts at 25% */ #ffffff 50%,
-    /* Second color continues until 50% */ #f0f0f0 50%,
-    /* First color reappears, continues for the next 25% */ #f0f0f0 75%,
-    /* First color continues */ #ffffff 75%
+  background-image: linear-gradient(45deg,
+      /* Direction of the stripes */
+      #f0f0f0 25%,
+      /* First color: white, appears for 25% */
+      #ffffff 25%,
+      /* Second color: light gray, starts at 25% */
+      #ffffff 50%,
+      /* Second color continues until 50% */
+      #f0f0f0 50%,
+      /* First color reappears, continues for the next 25% */
+      #f0f0f0 75%,
+      /* First color continues */
+      #ffffff 75%
       /* Second color starts at 75% and continues */
-  );
+    );
   background-size: 56px 56px;
 }
 
@@ -217,16 +197,21 @@ h1 {
 ul {
   list-style-type: none;
   padding: 0;
-  background-image: linear-gradient(
-    45deg,
-    /* Direction of the stripes */ #f0f0f0 25%,
-    /* First color: white, appears for 25% */ #ffffff 25%,
-    /* Second color: light gray, starts at 25% */ #ffffff 50%,
-    /* Second color continues until 50% */ #f0f0f0 50%,
-    /* First color reappears, continues for the next 25% */ #f0f0f0 75%,
-    /* First color continues */ #ffffff 75%
+  background-image: linear-gradient(45deg,
+      /* Direction of the stripes */
+      #f0f0f0 25%,
+      /* First color: white, appears for 25% */
+      #ffffff 25%,
+      /* Second color: light gray, starts at 25% */
+      #ffffff 50%,
+      /* Second color continues until 50% */
+      #f0f0f0 50%,
+      /* First color reappears, continues for the next 25% */
+      #f0f0f0 75%,
+      /* First color continues */
+      #ffffff 75%
       /* Second color starts at 75% and continues */
-  );
+    );
   background-size: 56px 56px;
 }
 

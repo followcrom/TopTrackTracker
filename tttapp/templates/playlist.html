@@ -32,14 +32,14 @@
   }
 
   .badge-user {
-    background: #ccc;
+    background: #ff69b4;
     color: #000;
   }
 
   .playlist-controls {
     margin: 10px;
-    color: #ccc;
-    font-size: 1.8em;
+    color: #006afe;
+    font-size: 1.2em;
     font-family: Arial, Helvetica, sans-serif;
   }
 
@@ -49,7 +49,7 @@
   }
 
   /* Playlist-table-only tweaks go below. These override trend_table.css
-     without affecting the Trending page, e.g.:
+     without affecting other pages that use it, e.g.:
   .playlist_table td { padding: 4px 12px; }
   .playlist_table .song { font-style: italic; }
   */
@@ -69,7 +69,7 @@
   </button>
 
   <form method="get" class="playlist-controls">
-    Tracks:
+    Favorites:
     <input type="number" name="tracks" value="{{ total }}" min="1" max="100" />
     New songs:
     <input type="number" name="recs" value="{{ rec_count }}" min="0" max="20" />
@@ -80,8 +80,12 @@
 
   <form action="{% url 'delete_all_playlist_tracks' %}" method="post">
     {% csrf_token %}
-    <button type="submit" class="button" style="color: red"
-      onclick="return confirm('Are you sure you want to delete all tracks?')">
+    <button
+      type="submit"
+      class="button"
+      style="color: red"
+      onclick="return confirm('Are you sure you want to delete all tracks?')"
+    >
       Delete All Tracks
     </button>
   </form>
@@ -107,7 +111,9 @@
       {% elif track.source_label == "USER" %}
       <span class="badge badge-user">USER</span>
       {% elif track.source_label %}
-      <span class="badge badge-top-{{ track.source_label|first|lower }}">{{ track.source_label }}</span>
+      <span class="badge badge-top-{{ track.source_label|first|lower }}"
+        >{{ track.source_label }}</span
+      >
       {% endif %}
     </td>
     <td class="artist">{{ track.artist }}</td>
@@ -115,7 +121,9 @@
     <td class="popularity">{{ track.popularity }}</td>
     <td class="uris">
       <i class="fa-brands fa-spotify"></i>
-      <a class="uri" href="{{ track.uri }}" target="_blank">Open <i>{{ track.song }}</i></a>
+      <a class="uri" href="{{ track.uri }}" target="_blank"
+        >Open <i>{{ track.song }}</i></a
+      >
     </td>
     <td class="delete">
       <form action="{% url 'delete_playlist_track' track.id %}" method="post">

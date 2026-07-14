@@ -8,10 +8,7 @@ db.sqlite3
 # Database files #
 *.sqlite3
 *.db
-
-
-# # Static files
-# static
+db.sqlite3.bak-2026-07-10
 
 
 # Docs directory
@@ -28,9 +25,7 @@ access_trending_tracks.py
 display_users.py
 .cache
 users.json
-
-# Migrations
-tttapp/migrations
+.claude/
 
 
 # Nginx file

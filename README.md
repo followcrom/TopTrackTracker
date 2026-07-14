@@ -1,73 +1,258 @@
-# followCrom's Top Track Tracker
+# 🔥 Top Track Tracker 🛤️
 
-![followCrom's Top Track Tracker](readme_img.png)
+<p align="center"><img src="readme_img.png" width="520" alt="followCrom's Top Track Tracker"/></p>
 
-## Start the virtual environment locally 👨🏻‍💻
+Track your Spotify plays and generate a playlist from your top tracks and Last.fm recommendations.
+
+## Development / Local 👨🏻‍💻
 
 ```bash
 source .venv/bin/activate
-```
 
-#### Install the requirements
-
-`pip install -r requirements.txt`
-
-## Start the Dev server (default port 8000)
-
-```bash
 python manage.py runserver
-
-# or
-
-python manage.py runserver 8000
 ```
 
-This starts Django's built-in development server.
-
-## Update the service 
+In `settings.py`:
 
 ```bash
-systemctl restart ttt.service
+PLATFORM = os.environ.get("PLATFORM", "Development").lower()
 ```
+
+`PLATFORM=development` (set as default by above) gives you:
+- `DEBUG=True`
+- local static files
+- local Spotify redirect URI.
+
+On the VM, `PLATFORM="production"` is set in `/var/www/ttt/tttracker/.env`, giving you:
+- `DEBUG=False`
+- S3 static
+- HTTPS-only cookies.
+
+<br>
+
+## 🎨 Design / Static Files 🖼️
+
+Static files are served from `static/` locally and from S3 in production.
+
+To update static files on the live site, edit them locally, then
+run `collectstatic` with production settings to push everything to the
+`static-ttt` S3 bucket:
 
 ```bash
-systemctl status ttt.service
+# --dry-run previews what would be uploaded without touching S3
+PLATFORM=production python manage.py collectstatic --dry-run
+
+PLATFORM=production python manage.py collectstatic
+
+# --noinput skips the "are you sure?" confirmation prompt
+PLATFORM=production python manage.py collectstatic --noinput
 ```
 
-## Run dev server on the AWS instance 👦
+1️⃣ `collectstatic` uses the `django-storages` backend configured via the
+`STORAGES` dictionary in **Platform-specific configurations** in `settings.py`
 
-🆕 **Untested**
+2️⃣ Also uploaded are Django admin's own CSS/JS (bundled via
+`django.contrib.staticfiles`), so `/admin/` gets styled too.
 
-Stop the Apache server to free up the port for the Django development server.
+3️⃣ **Do NOT run this on the droplet** 🚧
+
+Always run it from your local machine so
+the bucket reflects your local `static/`, not what is on the server.
+
+<br>
+
+## Database 💾
+
+Migrations are changes that alter the database schema. If you add a model or
+change a field, run:
 
 ```bash
-sudo systemctl stop apache2
+python manage.py makemigrations
+python manage.py migrate
 ```
 
-Then start your Django development server:
+`manage.py migrate` only applies schema changes - it doesn't migrate data. If
+you need existing data (users, playlist tracks) on a new machine, copy the
+`db.sqlite3` file itself.
+
+📐 Check the size of the SQLite file if disk space is ever a concern:
 
 ```bash
-python manage.py runserver 0.0.0.0:8000
+du -sh db.sqlite3
 ```
 
+<br>
 
-0.0.0.0 tells the development server to listen on all public IP addresses that the VM has. This makes the server accessible from outside the VM.
-8000 specifies the port number on which the server will listen for requests.
-Open your web browser and go to http://VM-Public-IP:8000
+## Users 🙋🏻
 
-## Log into the app: 🔑
+### Superuser / Admin 👱🏻‍♀️
 
-Login with AWS or Local account: **docs/users.txt**
+Create a superuser (admin) account to access the Django admin interface:
 
-
-## Debug Mode 🕵🏻‍♀️
-
-Never run a production site in Debug mode as it can expose sensitive information and make your site vulnerable to attacks.
-
-```python
-settings.py
-DEBUG = False
+```bash
+python manage.py createsuperuser
 ```
+
+Then log in at `/admin/` to manage users.
+
+NOTE on locking down the admin interface via Nginx:
+My Nginx config puts HTTP Basic Auth in front of `/admin/` (_auth_basic_user_file /etc/nginx/.htpasswd_admin_). To use the admin interface without the extra password prompt, comment out the two `auth_basic` lines in `/etc/nginx/sites-available/ttt` and reload Nginx:
+
+```bash
+nginx -t && systemctl reload nginx
+```
+
+### Regular Users 👧🏾👩🏻‍🦰👩🏻
+
+To create regular users, you can either:
+
+1. use the Django admin interface at `/admin/`
+
+2. run the `create_users.py` script in `/var/www/ttt/` on the server:
+
+```bash
+python create_users.py newuser securepassword
+
+# Or with an email (email is optional):
+python create_users.py newuser securepassword newuser@example.com
+```
+
+### List Users 👩🏻👧🏽👧🏾
+
+To list all users, you can either:
+
+1. use the Django admin interface at `/admin/auth/user/`
+
+2. run the `display_users.py` script in `/var/www/ttt/` on the server:
+
+```bash
+python display_users.py
+```
+
+`display_users.py` also shows the Django settings module, which is useful for troubleshooting.
+
+<br>
+
+## 📦 Production / DigitalOcean 🌊
+
+The `PLATFORM` environment variable is what determines which settings are used in `settings.py`.
+
+`PLATFORM=development` is set by default and used for local development.
+
+On the production server, the `.env` sets `PLATFORM=production` to select production settings.
+
+Ensure the `.env` file has the correct permissions:
+
+```bash
+chown www-data:www-data /var/www/ttt/tttracker/.env
+chmod 600 /var/www/ttt/tttracker/.env
+```
+
+<br>
+
+### 🧩 Nginx config
+
+```bash
+nano /etc/nginx/sites-available/ttt
+```
+
+```nginx
+# Block 1: The main HTTPS block for the canonical domain.
+# This is where your application runs.
+server {
+    listen 443 ssl http2;
+    server_name ttt.followcrom.com;
+
+    # SSL configuration (no changes)
+    ssl_certificate /etc/letsencrypt/live/ttt.followcrom.com/fullchain.pem;
+    ssl_certificate_key /etc/letsencrypt/live/ttt.followcrom.com/privkey.pem;
+    include /etc/letsencrypt/options-ssl-nginx.conf;
+    ssl_dhparam /etc/letsencrypt/ssl-dhparams.pem;
+
+    # HSTS: browsers refuse plain-HTTP to this domain for a year after first visit
+    add_header Strict-Transport-Security "max-age=31536000" always;
+
+    # Django admin: challenged at the web-server level, before Django sees it
+    location /admin/ {
+        auth_basic "Admin";
+        auth_basic_user_file /etc/nginx/.htpasswd_admin;
+
+        # Alternative: fixed-IP allowlist. Comment out the two auth_basic
+        # lines above and uncomment these (find your IP: curl ifconfig.me)
+        # allow YOUR.HOME.IP;
+        # deny all;
+
+        include proxy_params;
+        proxy_pass http://unix:/var/www/ttt/tttracker.sock;
+    }
+
+    # Reverse proxy to your application (no changes)
+    location / {
+        include proxy_params;
+        proxy_pass http://unix:/var/www/ttt/tttracker.sock;
+    }
+}
+
+# Block 2: A single block to redirect the 'www' version and all HTTP traffic.
+server {
+    listen 80;
+    listen 443 ssl;
+    server_name www.ttt.followcrom.com;
+
+    # We need the SSL certs here too, just to handle https://www... requests
+    ssl_certificate /etc/letsencrypt/live/ttt.followcrom.com/fullchain.pem;
+    ssl_certificate_key /etc/letsencrypt/live/ttt.followcrom.com/privkey.pem;
+
+    # This one line redirects all traffic to the correct, canonical URL
+    return 301 https://ttt.followcrom.com$request_uri;
+}
+```
+
+<br>
+
+### Logs 🪵
+
+```bash
+journalctl -u gunicorn -f
+tail -f /var/log/nginx/error.log
+```
+
+To clear the Gunicorn logs, truncate rather than delete:
+
+```bash
+truncate -s 0 /var/www/ttt/logs/ttt_access.log
+truncate -s 0 /var/www/ttt/logs/ttt_error.log
+```
+
+<br>
+
+## 🛠️ Troubleshooting 🕵
+
+**Verify both services are running:**
+
+```bash
+systemctl status gunicorn
+systemctl status nginx
+```
+
+**Spotify token cache:**
+
+`SpotifyOAuth` (in `spotify_client.py`) writes a
+`.cache` file to disk by default, separate from the token also stored in the
+Django session. If you change your Spotify account password, existing
+tokens are revoked and you'll see `invalid_grant: Refresh token revoked`. Delete the cache file and re-authenticate:
+
+```bash
+rm .cache
+```
+
+**Allowed Hosts:**
+
+A *400 Bad Request* means the request's `Host` header
+isn't in `ALLOWED_HOSTS` (`settings.py`, production branch). Add the missing
+domain/IP.
+
+<br>
 
 ## Renew Secret Key 🔐
 
@@ -76,271 +261,18 @@ from django.core.management.utils import get_random_secret_key
 print(get_random_secret_key())
 ```
 
-# Design 🎨
+<br>
 
-To edit the styles locally: in settings.py ensure that Local static settings are uncommented and S3 static settings are commented out.
+## 📅 Commit Activity 🕹️
 
-Once you have made your changes, uncomment the S3 static settings. **LEAVE the Local static settings uncommented**, then run the following command:
-
-```bash
-python manage.py collectstatic
-```
-
-This will prompt you to confirm the upload of your static files to the S3 bucket. Type yes to proceed.
-
-Once the static files have been uploaded to the S3 bucket, you can comment out the Local static settings to use the S3 static files.
-
-# Logs 📝
-
-### Access Logs:
-```bash
-sudo tail -n 20 /opt/bitnami/apache2/logs/access_log
-
-cat /opt/bitnami/apache2/logs/access_log
-```
-
-### Error Logs:
-```bash
-sudo tail -n 20 /opt/bitnami/apache2/logs/error_log
-```
-
-or all:
-
-`sudo cat /opt/bitnami/apache2/logs/error_log`
-
-### Django files:
-`head -n 20 settings.py`
+![GitHub last commit](https://img.shields.io/github/last-commit/followcrom/TopTrackTracker)
+![GitHub commit activity](https://img.shields.io/github/commit-activity/m/followcrom/TopTrackTracker)
+![GitHub repo size](https://img.shields.io/github/repo-size/followcrom/TopTrackTracker)
 
 <br>
 
-## Fixing the .cache Issue 👷
+## ✍ Authors 
 
-There is a potential issue with writing session info to the Apache (LightSail) server. When I copied to the .`cache` file from local to LightSail, I began getting 500 errors when 'Calling Spotify...' from `spotify_client.py -> spotify_callback`.
+📫 [Get in touch](https://followcrom.com/contact/contact.php) 👋
 
-Atempt to fix this by changing permissions for the .cache file on the Apache server. It should be in the `djangoapp` directory:
-
-```bash
-sudo chown -R www-data:www-data .cache
-
-# Restart Apache:
-sudo /opt/bitnami/ctlscript.sh restart apache
-```
-
-This resulted in: **-rw-r--r-- 1 www-data www-data    532 May 11 16:05 .cache**
-
-I wonder if the server has to have permissions to write to the .cache file? Even after this I continued to the get _Couldn't write token to cache at: .cache_ in the error logs, but this was around the time the 500 errors were resolved, so it is worth noting.
-
-
-```bash
-# Config test:
-sudo apachectl configtest
-
-# Status:
-sudo /opt/bitnami/ctlscript.sh status apache
-
-# Restart Apache:
-sudo /opt/bitnami/ctlscript.sh restart apache
-```
-
-## On Changing Spotify Password 🟢ᯤ
-
-On changing my Spotify password, all existing tokens (both access and refresh tokens) were invalidated for security reasons. When I tried using the Spotify API I kept getting hit with error: 
-
-`invalid_grant, error_description: Refresh token revoked`
-
-I needed to mauanlly delete the `.cache` file as that's where the token info is stored. Then, when I hit an endpoint again it re-authenticated.
-
-```bash
-rm .cache
-```
-
-### The Authentication Flow 🔀 🏄🏽‍♀️
-
-Here is a simplified explanation of how the tokens and codes work together in the authentication flow:
-
-1. **User Authentication**:
-   - The user logs in to Spotify and grants your application the requested permissions.
-   - Spotify redirects the user back to your application with an **authorization code**.
-
-2. **Token Exchange**:
-   - Your application sends the **authorization code** to Spotify's token endpoint to exchange it for an **access token** and a **refresh token**.
-
-3. **Accessing the API**:
-   - Your application uses the **access token** to make requests to the Spotify API.
-   - When the **access token** expires, your application uses the **refresh token** to request a new **access token**.
-
-### The Codes 📟
-
-1. Authorization Code:
-   - This is a short-lived code obtained when a user authorizes your application.
-   - It's used to request access and refresh tokens.
-   - Generated through the authorization flow when the user grants permission to your app.
-
-2. Access Token:
-   - A short-lived token (usually expires in 1 hour) used to authenticate API requests.
-   - Sent with each API request to prove the application has permission to access user data.
-
-3. Refresh Token:
-   - A long-lived token used to obtain new access tokens without requiring the user to re-authorize.
-   - Typically doesn't expire unless revoked.
-
-<br>
-
-# Database 📟
-
-```bash
-python manage.py makemigrations
-
-python manage.py migrate
-```
-
-### ⌨ Access the DB:
-
-All saved records are stored in the TrendingTracks model. View, add and remove tracks via the console in the U.I.
-
-For local database entry details run on the local machine. For the AWS instance, run on the server.
-
-```python
-python3 access_trending_tracks.py
-```
-
-Fields:
-  - artist
-  - song
-  - album
-  - release_year
-  - popularity
-  - uri
-  - genres
-  - energy (deprecated)
-  - key (deprecated)
-  - valence (deprecated)
-  - mood (deprecated)
-  - tempo (deprecated)
-  - artist_uri
-
-<br>
-
-**Note**: In Django, every model automatically gets an id field: an auto-incrementing primary key for the model, identifying each record in the database table associated with your model. You don't need to define this field; Django takes care of it for you.
-
-You can access the the auth_user table in your database via the Django admin interface at /admin/ or:
-
-```bash
-python display_users.py
-```
-
-<br>
-
-# New Users 🧑‍💻
-
-Credentials: **docs/users.txt**
-
-### Create a Superuser
-
-`python manage.py createsuperuser`
-
-Follow the prompts to create the superuser.
-
-### Create a new AWS user 
-
-Navigate to https://ttt.followcrom.com/admin/ and log in with the AWS superuser credentials. In the admin interface, "Add User".
-
-### Create a new local user
-
-Navigate to /admin/ in your browser and log in with the local superuser credentials.
-
-### Exporting Users
-
-You can export user data from your current database using Django's management commands or custom scripts.
-
-```bash
-python manage.py dumpdata auth.user --output users.json
-```
-
-<br>
-
-# Fix Attempts if Necessary 👷
-
-### Test the user-top-read endpoint
-
-```bash
-curl --request GET \
-  --url 'https://api.spotify.com/v1/me/top/tracks?time_range=short_term&offset=0' \
-  --header 'Authorization: Bearer xxx'
-```
-
-### Use curl to test the callback URL:
-
-```bash
-curl "https://ttt.followcrom.com/callback/?code=<auth-code>"
-
-# Here's an example of what the command might look like:
-curl "http://localhost:8000/callback/?code=AQBx9dKc..."
-```
-
-### Clear the cache:
-
-`rm .cache`
-
-### Temporarily run Django app using the development server on AWS
-
-```bash
-sudo systemctl stop apache2
-
-# Then start your Django development server:
-python manage.py runserver 0.0.0.0:8000
-```
-
-### Overwrite file with a specific commit version
-
-```bash
-# Identify the Commit Hash:
-git log
-
-# Check Out the Specific File from the Commit:
-git checkout <commit-hash> -- <path-to-file>
-```
-
-### CORS:
-
-This may well not be necessary, but if you're having trouble with CORS, you can add the following to your Apache configuration file:
-
-```bash
-cd /opt/bitnami/apache2/conf/vhosts
-
-sudo nano tttracker-vhost.conf
-```
-
-More secure:
-
-```bash
-<Directory /home/bitnami/djangoapp/tttracker>
-    Header set Access-Control-Allow-Origin "https://ttt.followcrom.com"
-    <Files wsgi.py>
-        Require all granted
-    </Files>
-</Directory>
-```
-
-Less secure:
-
-```bash
-    <Directory /home/bitnami/djangoapp/tttracker>
-        Header set Access-Control-Allow-Origin "*"
-        <Files wsgi.py>
-            Require all granted
-        </Files>
-    </Directory>
-```
-
-Before these headers will work, ensure that the mod_headers module is enabled in Apache:
-
-```bash
-sudo a2enmod headers
-sudo /opt/bitnami/ctlscript.sh restart apache
-```
-<br>
-
-# FileZilla 🦖
-
-**.pem keys** are in Edit -> Settings -> SFTP -> Add Key File
+[![Static Badge](https://img.shields.io/badge/followcrom-online-blue)](http://followcrom.com)

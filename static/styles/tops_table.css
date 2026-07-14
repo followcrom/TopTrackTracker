@@ -33,7 +33,8 @@
   width: 15%;
 }
 
-.track_table td.popularity {
+.track_table td.popularity,
+.track_table td.playcount {
     text-align: center;
     width: 5%;
     font-weight: bold;

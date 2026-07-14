@@ -2,43 +2,45 @@
 
 
 .track_table {
-    width: 100%;
-    margin: auto;
-    font-size: 1rem;
-    font-family: 'Raleway', sans-serif;
-    border-collapse: collapse;
-    border-top: #FFF 2px solid;
-  }
+  width: 100%;
+  margin: auto;
+  font-size: 1rem;
+  font-family: 'Raleway', sans-serif;
+  border-collapse: collapse;
+  border-top: #FFF 2px solid;
+}
 
 
 .track_table th {
-    background-color: #333;
-    color: #FFF;
-    text-align: center;
-    padding: 8px;
-    height: 40px;
-    border: 1px solid #333;
+  background-color: #333;
+  color: #FFF;
+  text-align: center;
+  padding: 8px;
+  height: 40px;
+  border: 1px solid #333;
 }
 
 
 .track_table td {
-    border: 1px solid #333;
-    padding: 8px;
-    text-align: left;
-    height: 40px;
+  border: 1px solid #333;
+  padding: 8px;
+  text-align: left;
+  height: 40px;
 }
 
 
-.track_table td.artist, .track_table td.song, .track_table td.album {
+.track_table td.artist,
+.track_table td.song,
+.track_table td.album {
   width: 15%;
 }
 
 .track_table td.popularity,
 .track_table td.playcount {
-    text-align: center;
-    width: 5%;
-    font-weight: bold;
-  }
+  text-align: center;
+  width: 5%;
+  font-weight: bold;
+}
 
 .track_table td.release {
   text-align: center;
@@ -51,13 +53,14 @@
 }
 
 .track_table td.add {
-    text-align: center;
-    width: 5%;
-  }
+  text-align: center;
+  width: 5%;
+}
 
 
 .track_table tr:nth-child(even) {
-  background-color: #E0E0E0; /* Zebra striping for rows */
+  background-color: #E0E0E0;
+  /* Zebra striping for rows */
 }
 
 /* Responsive adjustments (for smaller screens) */
@@ -66,7 +69,8 @@
     font-size: 0.9rem;
   }
 
-  .track_table th, .track_table td {
+  .track_table th,
+  .track_table td {
     padding: 5px;
   }
 }
@@ -74,31 +78,31 @@
 /* End Table Styles */
 
 
-.fa-brands, .fa-solid {
-    font-size: 23px;
-    color: green;
-    padding-right: 5px;
-  }
+.fa-brands,
+.fa-solid {
+  font-size: 23px;
+  color: green;
+  padding-right: 5px;
+}
 
 
 
 
 
 a.uri:link {
-font-family: 'Poppins', sans-serif;
-color:green;
-text-decoration: none;
-cursor: pointer;
+  font-family: 'Poppins', sans-serif;
+  color: green;
+  text-decoration: none;
+  cursor: pointer;
 }
 
 a.uri:visited {
-color:#000;
-cursor: pointer;
+  color: #000;
+  cursor: pointer;
 }
 
 a.uri:hover {
-color: #006afe;
-text-decoration: underline;
-cursor: pointer;
+  color: #006afe;
+  text-decoration: underline;
+  cursor: pointer;
 }
-

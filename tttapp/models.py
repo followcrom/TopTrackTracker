@@ -18,3 +18,16 @@ class PlaylistTrack(models.Model):
     # S/M/L/NEW (or a combo like "S/M") for Reshuffle-added tracks; "USER"
     # for tracks added manually from Top Tracks.
     source_label = models.CharField(max_length=200, default="", blank=True)
+    # Display order (higher = shown first). Lets Shuffle reorder tracks
+    # independently of insertion order.
+    position = models.IntegerField(default=0)
+
+
+class CreatedPlaylist(models.Model):
+    """A record of a playlist pushed to Spotify from the builder, so past
+    playlists (TTT_1, TTT_2, ...) can be recreated or inspected later."""
+
+    name = models.CharField(max_length=200)
+    spotify_playlist_id = models.CharField(max_length=200, default="", blank=True)
+    csv_data = models.TextField()
+    created_at = models.DateTimeField(auto_now_add=True)

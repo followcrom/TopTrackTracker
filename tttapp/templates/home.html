@@ -5,13 +5,14 @@
 <div class="home-content">
 
     {% if user.is_authenticated %}
-    <h2>👋 Yo Breezy! Here's your top 10 for:</h2>
+    <h2>👋 Hi Senor {{ user.last_name }}! Here's your top 10 for:</h2>
 
     <div id="message-area"></div>
 
-    <div class="tabs">
+    <div class="tabs topRow">
         {% for period in lastfm_periods %}
-        <button type="button" class="tab-button{% if forloop.first %} active{% endif %}" data-tab="period-{{ forloop.counter0 }}">{{ period.label }}</button>
+        <button type="button" class="button tab-button{% if forloop.first %} active{% endif %}"
+            data-tab="period-{{ forloop.counter0 }}">{{ period.label }}</button>
         {% endfor %}
     </div>
 

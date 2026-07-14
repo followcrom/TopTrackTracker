@@ -10,7 +10,7 @@ from django.shortcuts import redirect
 
 # scope="user-library-read user-read-playback-state user-top-read user-modify-playback-state"
 
-scope="user-top-read user-read-playback-state user-modify-playback-state"
+scope="user-top-read user-read-playback-state user-modify-playback-state playlist-modify-private"
 
 def get_spotify_oauth():
     return SpotifyOAuth(

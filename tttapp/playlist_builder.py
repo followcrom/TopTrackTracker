@@ -4,11 +4,15 @@
 # top-track time ranges, topped up with Last.fm similar-track
 # recommendations, then starts playback on the active Spotify device.
 
+import csv
+import io
 import logging
 import random
+import re
 
 from django.conf import settings
 from django.contrib.auth.decorators import login_required
+from django.db.models import Max
 from django.http import JsonResponse
 from django.shortcuts import redirect, render
 from django.views.decorators.http import require_POST
@@ -16,7 +20,7 @@ from django_ratelimit.decorators import ratelimit
 from spotipy import SpotifyException
 
 from .lastfm_utils import gather_recommendations
-from .models import PlaylistTrack
+from .models import CreatedPlaylist, PlaylistTrack
 from .spotify_client import get_spotipy_client
 from .user_utils import rate
 
@@ -105,6 +109,42 @@ def _int_param(request, name, default, lo, hi):
     return max(lo, min(hi, value))
 
 
+# -----------------------------------------
+
+
+def _next_position():
+    top = PlaylistTrack.objects.aggregate(Max("position"))["position__max"]
+    return (top or 0) + 1
+
+
+# -----------------------------------------
+
+
+def _tracks_to_csv(tracks):
+    buffer = io.StringIO()
+    writer = csv.writer(buffer)
+    writer.writerow(
+        ["artist", "song", "uri", "popularity", "album", "release_year", "source_label"]
+    )
+    for t in tracks:
+        writer.writerow(
+            [t.artist, t.song, t.uri, t.popularity, t.album, t.release_year, t.source_label]
+        )
+    return buffer.getvalue()
+
+
+# -----------------------------------------
+
+
+def _next_playlist_name():
+    highest = 0
+    for name in CreatedPlaylist.objects.values_list("name", flat=True):
+        match = re.fullmatch(r"TTT_(\d+)", name)
+        if match:
+            highest = max(highest, int(match.group(1)))
+    return f"TTT_{highest + 1}"
+
+
 @login_required
 @ratelimit(key="user", rate=rate, block=True)
 def build_playlist(request):
@@ -158,6 +198,7 @@ def build_playlist(request):
             existing_uris = set(PlaylistTrack.objects.values_list("uri", flat=True))
             new_tracks = [t for t in new_tracks if t["uri"] not in existing_uris]
 
+            next_position = _next_position()
             PlaylistTrack.objects.bulk_create(
                 PlaylistTrack(
                     artist=t["artist"],
@@ -165,11 +206,12 @@ def build_playlist(request):
                     uri=t["uri"],
                     popularity=t["popularity"],
                     source_label="/".join(t["sources"]),
+                    position=next_position + i,
                 )
-                for t in new_tracks
+                for i, t in enumerate(new_tracks)
             )
 
-    playlist = PlaylistTrack.objects.all().order_by("-id")
+    playlist = PlaylistTrack.objects.all().order_by("-position")
 
     return render(
         request,
@@ -203,6 +245,7 @@ def add_to_playlist(request):
             album=request.POST.get("album", ""),
             release_year=request.POST.get("release_year", ""),
             source_label="USER",
+            position=_next_position(),
         )
         return JsonResponse({"success": True, "message": "✓ Added to playlist"})
 
@@ -254,6 +297,7 @@ def add_lastfm_track_to_playlist(request):
         uri=uri,
         popularity=track["popularity"],
         source_label="USER",
+        position=_next_position(),
     )
     return JsonResponse({"success": True, "message": "✓ Added to playlist"})
 
@@ -289,7 +333,9 @@ def play_playlist(request):
             {"success": False, "message": "Spotify session expired - reload the page."}
         )
 
-    uris = list(PlaylistTrack.objects.values_list("uri", flat=True))[::-1]
+    uris = list(
+        PlaylistTrack.objects.order_by("-position").values_list("uri", flat=True)
+    )
     if not uris:
         return JsonResponse({"success": False, "message": "No tracks in the playlist yet."})
 
@@ -304,3 +350,62 @@ def play_playlist(request):
         else:
             msg = f"Spotify error: {e.msg}"
         return JsonResponse({"success": False, "message": msg})
+
+
+# -----------------------------------------
+
+
+@login_required
+@require_POST
+def shuffle_playlist_tracks(request):
+    tracks = list(PlaylistTrack.objects.all())
+    ids = [t.id for t in tracks]
+    random.shuffle(ids)
+
+    by_id = {t.id: t for t in tracks}
+    for new_position, track_id in enumerate(reversed(ids), start=1):
+        by_id[track_id].position = new_position
+
+    PlaylistTrack.objects.bulk_update(tracks, ["position"])
+    return redirect("build_playlist")
+
+
+# -----------------------------------------
+
+
+@login_required
+@ratelimit(key="user", rate=rate, block=True)
+def create_spotify_playlist(request):
+    if request.method != "POST":
+        return JsonResponse({"success": False, "message": "Invalid request."}, status=400)
+
+    sp = get_spotipy_client(request)
+    if not sp:
+        return JsonResponse(
+            {"success": False, "message": "Spotify session expired - reload the page."}
+        )
+
+    tracks = list(PlaylistTrack.objects.order_by("-position"))
+    if not tracks:
+        return JsonResponse({"success": False, "message": "No tracks in the playlist yet."})
+
+    name = _next_playlist_name()
+    uris = [t.uri for t in tracks]
+
+    try:
+        user_id = sp.current_user()["id"]
+        playlist = sp.user_playlist_create(user_id, name, public=False)
+        sp.playlist_add_items(playlist["id"], uris)
+    except SpotifyException as e:
+        logger.error(f"Creating Spotify playlist failed: {e.http_status}")
+        return JsonResponse({"success": False, "message": f"Spotify error: {e.msg}"})
+
+    CreatedPlaylist.objects.create(
+        name=name,
+        spotify_playlist_id=playlist["id"],
+        csv_data=_tracks_to_csv(tracks),
+    )
+
+    return JsonResponse(
+        {"success": True, "message": f"Created '{name}' on Spotify ({len(uris)} tracks) ♫"}
+    )

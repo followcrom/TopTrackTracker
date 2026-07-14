@@ -15,6 +15,8 @@ from .playlist_builder import (
     add_lastfm_track_to_playlist,
     delete_playlist_track,
     delete_all_playlist_tracks,
+    shuffle_playlist_tracks,
+    create_spotify_playlist,
 )
 
 from .spotify_client import spotify_auth, spotify_callback
@@ -45,5 +47,15 @@ urlpatterns = [
         "delete-all-playlist-tracks/",
         delete_all_playlist_tracks,
         name="delete_all_playlist_tracks",
+    ),
+    path(
+        "shuffle-playlist-tracks/",
+        shuffle_playlist_tracks,
+        name="shuffle_playlist_tracks",
+    ),
+    path(
+        "create-spotify-playlist/",
+        create_spotify_playlist,
+        name="create_spotify_playlist",
     ),
 ]

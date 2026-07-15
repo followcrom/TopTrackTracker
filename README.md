@@ -4,6 +4,21 @@
 
 Track your Spotify plays and generate a playlist from your top tracks and Last.fm recommendations.
 
+## GitHub
+
+To make the local branch an exact copy of origin/SURFACE (discarding any local differences):
+
+```bash
+git fetch origin
+git reset --hard origin/SURFACE
+```
+
+If you want a normal pull/merge instead:
+
+```bash
+git pull origin SURFACE
+```
+
 ## Development / Local 👨🏻‍💻
 
 ```bash
@@ -64,12 +79,28 @@ the bucket reflects your local `static/`, not what is on the server.
 ## Database 💾
 
 Migrations are changes that alter the database schema. If you add a model or
-change a field, run:
+change a field:
+
+**1️⃣ Locally** — generate the migration file and commit it:
 
 ```bash
 python manage.py makemigrations
+git add tttapp/migrations/
+git commit -m "Add migration for ..."
+git push origin SURFACE
+```
+
+**2️⃣ On the VM** — pull the migration file, then apply it to the database:
+
+```bash
+git pull origin SURFACE
 python manage.py migrate
 ```
+
+🚧 **Don't run `makemigrations` on the VM.** It only generates migration
+files (it doesn't touch the database by itself), but generating them there
+risks drifting from what's committed to git. Always generate and commit
+migrations locally, then just run `migrate` on the VM to apply them.
 
 `manage.py migrate` only applies schema changes - it doesn't migrate data. If
 you need existing data (users, playlist tracks) on a new machine, copy the
@@ -80,6 +111,40 @@ you need existing data (users, playlist tracks) on a new machine, copy the
 ```bash
 du -sh db.sqlite3
 ```
+
+<br>
+
+## 🚀 Deploying a Change: Dev → Live
+
+Checklist for pushing a local change to the live site.
+
+**1️⃣ Push your code:**
+
+```bash
+git push origin SURFACE
+```
+
+**2️⃣ If you changed static files** (CSS/JS/images in `static/`) — run this
+**locally**, not on the VM (see **Design / Static Files** above):
+
+```bash
+PLATFORM=production python manage.py collectstatic --noinput
+```
+
+**3️⃣ On the VM** — pull the code and apply the rest:
+
+```bash
+cd /var/www/ttt
+git pull origin SURFACE
+
+# only if a model/field changed - see Database above
+python manage.py migrate
+
+systemctl restart ttt.service
+```
+
+Restarting Gunicorn is what actually loads your new code (`git pull` alone
+doesn't reload the running process). Nginx doesn't need a restart unless you edited its config.
 
 <br>
 
@@ -130,18 +195,6 @@ python display_users.py
 ```
 
 `display_users.py` also shows the Django settings module, which is useful for troubleshooting.
-
-To change a user's first and last name, run the following command on the server:
-
-```bash
-python manage.py shell -c "
-from django.contrib.auth.models import User
-u = User.objects.get(username='local')
-u.first_name = 'Teed'
-u.last_name = 'Breezy'
-u.save()
-"
-```
 
 <br>
 

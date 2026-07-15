@@ -54,10 +54,15 @@
   .playlist_table .song { font-style: italic; }
   */
   .playlist_table .source,
-  .playlist_table .popularity,
   .playlist_table .delete {
     width: 1%;
     white-space: nowrap;
+  }
+
+  .playlist_table .popularity {
+    width: 1%;
+    white-space: nowrap;
+    font-weight: bold;
   }
 </style>
 
@@ -68,15 +73,16 @@
     Play in Spotify
   </button>
 
-  <form method="get" class="playlist-controls">
-    Favorites:
-    <input type="number" name="tracks" value="{{ total }}" min="1" max="100" />
-    New songs:
-    <input type="number" name="recs" value="{{ rec_count }}" min="0" max="20" />
-    <button type="submit" class="button" style="color: #2fff9b">
-      Generate Tracks
+  <form action="{% url 'shuffle_playlist_tracks' %}" method="post">
+    {% csrf_token %}
+    <button type="submit" class="button" style="color: orange">
+      Shuffle
     </button>
   </form>
+
+  <button id="createPlaylistButton" class="button" style="color: #fff">
+    Create Playlist
+  </button>
 
   <form action="{% url 'delete_all_playlist_tracks' %}" method="post">
     {% csrf_token %}
@@ -129,6 +135,18 @@
   {% endfor %}
 </table>
 
+<div class="topRow">
+  <form method="get" class="playlist-controls">
+    Favorites:
+    <input type="number" name="tracks" value="{{ total }}" min="1" max="100" />
+    New songs:
+    <input type="number" name="recs" value="{{ rec_count }}" min="0" max="20" />
+    <button type="submit" class="button" style="color: #2fff9b">
+      Generate Tracks
+    </button>
+  </form>
+</div>
+
 <br /><br />
 
 <script>
@@ -144,10 +162,48 @@
         .then((data) => {
           messageArea.textContent = data.message;
           messageArea.style.color = data.success ? "#54E772" : "#E75480";
+          setTimeout(() => {
+            messageArea.textContent = "";
+          }, 2500);
         })
         .catch((error) => {
           messageArea.textContent = "Error sending request: " + error;
           messageArea.style.color = "#E75480";
+          setTimeout(() => {
+            messageArea.textContent = "";
+          }, 2500);
+        });
+    });
+
+  document
+    .getElementById("createPlaylistButton")
+    .addEventListener("click", function () {
+      var messageArea = document.getElementById("message-area");
+      messageArea.textContent = "Creating playlist on Spotify...";
+      messageArea.style.color = "#ccc";
+
+      var csrfToken = document.querySelector(
+        "[name=csrfmiddlewaretoken]"
+      ).value;
+
+      fetch("{% url 'create_spotify_playlist' %}", {
+        method: "POST",
+        headers: { "X-CSRFToken": csrfToken },
+      })
+        .then((response) => response.json())
+        .then((data) => {
+          messageArea.textContent = data.message;
+          messageArea.style.color = data.success ? "#54E772" : "#E75480";
+          setTimeout(() => {
+            messageArea.textContent = "";
+          }, 2500);
+        })
+        .catch((error) => {
+          messageArea.textContent = "Error sending request: " + error;
+          messageArea.style.color = "#E75480";
+          setTimeout(() => {
+            messageArea.textContent = "";
+          }, 2500);
         });
     });
 </script>

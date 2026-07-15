@@ -196,6 +196,18 @@ python display_users.py
 
 `display_users.py` also shows the Django settings module, which is useful for troubleshooting.
 
+To change a user's first and last name, run the following command on the server:
+
+```python
+python manage.py shell -c "
+from django.contrib.auth.models import User
+u = User.objects.get(username='local')
+u.first_name = 'Teed'
+u.last_name = 'Breezy'
+u.save()
+"
+```
+
 <br>
 
 ## 📦 Production / DigitalOcean 🌊

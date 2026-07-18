@@ -32,7 +32,7 @@ TIME_RANGES = [
     ("long_term", "L"),
 ]
 
-DEFAULT_TOTAL = 5
+DEFAULT_FAVORITES = 5
 DEFAULT_RECS = 2  # number of Last.fm recommendations to include
 MAX_LASTFM_SEEDS = 8
 
@@ -92,7 +92,7 @@ def _resolve_on_spotify(sp, candidates, wanted):
                 "song": track["name"],
                 "uri": track["uri"],
                 "popularity": track["popularity"],
-                "sources": ["NEW"],
+                "sources": ["LFM"],
             }
         )
     return resolved
@@ -148,7 +148,7 @@ def _next_playlist_name():
 @login_required
 @ratelimit(key="user", rate=rate, block=True)
 def build_playlist(request):
-    total = _int_param(request, "tracks", DEFAULT_TOTAL, 1, 100)
+    fav_count = _int_param(request, "tracks", DEFAULT_FAVORITES, 0, 20)
     rec_count = _int_param(request, "recs", DEFAULT_RECS, 0, 20)
     message = ""
 
@@ -171,25 +171,23 @@ def build_playlist(request):
             message = "Could not fetch your top tracks from Spotify. Try again shortly."
 
         if pool:
-            # "recs" is an absolute number of songs; it can't exceed the total
-            rec_target = min(rec_count, total)
-            top_target = total - rec_target
-
-            top_picks = random.sample(pool, min(top_target, len(pool)))
+            # Favorites and LFM are independent counts, so the
+            # playlist gets up to fav_count + rec_count tracks.
+            top_picks = random.sample(pool, min(fav_count, len(pool)))
 
             recommendations = []
-            if rec_target and settings.LASTFM_API_KEY:
+            if rec_count and settings.LASTFM_API_KEY:
                 seeds = random.sample(pool, min(MAX_LASTFM_SEEDS, len(pool)))
                 exclude = {
                     (t["artist"].split(" & ")[0].lower(), t["song"].lower())
                     for t in pool
                 }
                 candidates = gather_recommendations(
-                    seeds, settings.LASTFM_API_KEY, rec_target, exclude
+                    seeds, settings.LASTFM_API_KEY, rec_count, exclude
                 )
-                recommendations = _resolve_on_spotify(sp, candidates, rec_target)
+                recommendations = _resolve_on_spotify(sp, candidates, rec_count)
 
-            if rec_target and not recommendations:
+            if rec_count and not recommendations:
                 message = "No Last.fm recommendations this time - playlist is top tracks only."
 
             new_tracks = top_picks + recommendations
@@ -219,7 +217,7 @@ def build_playlist(request):
         {
             "name": "Playlist Builder",
             "playlist": playlist,
-            "total": total,
+            "fav_count": fav_count,
             "rec_count": rec_count,
             "message": message,
         },

@@ -92,7 +92,7 @@ def _resolve_on_spotify(sp, candidates, wanted):
                 "song": track["name"],
                 "uri": track["uri"],
                 "popularity": track["popularity"],
-                "sources": ["NEW"],
+                "sources": ["LFM"],
             }
         )
     return resolved
@@ -148,7 +148,7 @@ def _next_playlist_name():
 @login_required
 @ratelimit(key="user", rate=rate, block=True)
 def build_playlist(request):
-    fav_count = _int_param(request, "tracks", DEFAULT_FAVORITES, 1, 20)
+    fav_count = _int_param(request, "tracks", DEFAULT_FAVORITES, 0, 20)
     rec_count = _int_param(request, "recs", DEFAULT_RECS, 0, 20)
     message = ""
 
@@ -171,7 +171,7 @@ def build_playlist(request):
             message = "Could not fetch your top tracks from Spotify. Try again shortly."
 
         if pool:
-            # Favorites and New songs are independent counts, so the
+            # Favorites and LFM are independent counts, so the
             # playlist gets up to fav_count + rec_count tracks.
             top_picks = random.sample(pool, min(fav_count, len(pool)))
 

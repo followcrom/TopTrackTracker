@@ -112,8 +112,8 @@
   <tr>
     <td class="counter">{{ forloop.counter }}</td>
     <td class="source">
-      {% if track.source_label == "NEW" %}
-      <span class="badge badge-rec">NEW</span>
+      {% if track.source_label == "LFM" %}
+      <span class="badge badge-rec">LFM</span>
       {% elif track.source_label == "USER" %}
       <span class="badge badge-user">USER</span>
       {% elif track.source_label %}
@@ -142,8 +142,8 @@
 <div class="topRow">
   <form method="get" class="playlist-controls">
     Favorites:
-    <input type="number" name="tracks" value="{{ fav_count }}" min="1" max="20" />
-    New songs:
+    <input type="number" name="tracks" value="{{ fav_count }}" min="0" max="20" />
+    LFM:
     <input type="number" name="recs" value="{{ rec_count }}" min="0" max="20" />
     <button type="submit" class="button" style="color: #2fff9b">
       Generate Tracks

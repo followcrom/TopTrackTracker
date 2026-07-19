@@ -81,19 +81,15 @@ the bucket reflects your local `static/`, not what is on the server.
 Migrations are changes that alter the database schema. If you add a model or
 change a field:
 
-**1️⃣ Locally** — generate the migration file and commit it:
+**1️⃣ Locally**: generate the migration file:
 
 ```bash
 python manage.py makemigrations
-git add tttapp/migrations/
-git commit -m "Add migration for ..."
-git push origin SURFACE
 ```
 
-**2️⃣ On the VM** — pull the migration file, then apply it to the database:
+**2️⃣ On the VM**: pull/FTP the migration file, then apply it to the database:
 
 ```bash
-git pull origin SURFACE
 python manage.py migrate
 ```
 
@@ -114,28 +110,25 @@ du -sh db.sqlite3
 
 <br>
 
-## 🚀 Deploying a Change: Dev → Live
+## 🚀 Deploying a Change
 
-Checklist for pushing a local change to the live site.
+**1️⃣ Use FTP to upload your code**
 
-**1️⃣ Push your code:**
-
-```bash
-git push origin SURFACE
-```
-
-**2️⃣ If you changed static files** (CSS/JS/images in `static/`) — run this
+**2️⃣ If you changed static files** run this
 **locally**, not on the VM (see **Design / Static Files** above):
 
 ```bash
 PLATFORM=production python manage.py collectstatic --noinput
 ```
 
-**3️⃣ On the VM** — pull the code and apply the rest:
+**3️⃣ On the VM**:
+
+FTP the new code to `/var/www/ttt/` and then run:
 
 ```bash
-cd /var/www/ttt
-git pull origin SURFACE
+cd /var/www/ttt/
+
+source .venv/bin/activate
 
 # only if a model/field changed - see Database above
 python manage.py migrate

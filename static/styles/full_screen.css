@@ -138,14 +138,19 @@ h1 {
 }
 
 /* .tab-button reuses .button's look (see Button Styles below); only the
-   active-tab highlight is specific to tabs. Also pinned against
+   text/active-tab colors are specific to tabs, matching the Playlist
+   Builder's blue background / green text treatment. Also pinned against
    .button:hover, which is defined later in this file with equal
    specificity and would otherwise win on hover. */
+.tab-button {
+  color: white;
+}
+
 .tab-button.active,
 .tab-button.active:hover,
 .tab-button.active:focus {
   background-color: #004897;
-  color: #fff;
+  color: #2fff9b;
 }
 
 .tab-content {

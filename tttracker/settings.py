@@ -37,6 +37,9 @@ SPOTIFY_CLIENT_SECRET = os.environ.get("SPOTIFY_CLIENT_SECRET")
 # Determine platform
 PLATFORM = os.environ.get("PLATFORM", "Development").lower()
 
+# Source directory for static files, used by collectstatic regardless of platform
+STATICFILES_DIRS = [os.path.join(BASE_DIR, "static")]
+
 # Platform-specific configurations
 if PLATFORM == "development":
     DEBUG = True
@@ -44,7 +47,6 @@ if PLATFORM == "development":
     SPOTIFY_REDIRECT_URI = "http://127.0.0.1:8000/callback/"
     # Local static settings
     STATIC_URL = "/static/"
-    STATICFILES_DIRS = [os.path.join(BASE_DIR, "static")]
     print("Running in Development mode")
     print("STATICFILES_DIRS:", STATICFILES_DIRS)
     print(f"Running on platform: {PLATFORM}")

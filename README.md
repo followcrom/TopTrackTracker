@@ -4,6 +4,21 @@
 
 Track your Spotify plays and generate a playlist from your top tracks and Last.fm recommendations.
 
+## GitHub
+
+To make the local branch an exact copy of origin/SURFACE (discarding any local differences):
+
+```bash
+git fetch origin
+git reset --hard origin/SURFACE
+```
+
+If you want a normal pull/merge instead:
+
+```bash
+git pull origin SURFACE
+```
+
 ## Development / Local 👨🏻‍💻
 
 ```bash
@@ -64,12 +79,24 @@ the bucket reflects your local `static/`, not what is on the server.
 ## Database 💾
 
 Migrations are changes that alter the database schema. If you add a model or
-change a field, run:
+change a field:
+
+**1️⃣ Locally**: generate the migration file:
 
 ```bash
 python manage.py makemigrations
+```
+
+**2️⃣ On the VM**: pull/FTP the migration file, then apply it to the database:
+
+```bash
 python manage.py migrate
 ```
+
+🚧 **Don't run `makemigrations` on the VM.** It only generates migration
+files (it doesn't touch the database by itself), but generating them there
+risks drifting from what's committed to git. Always generate and commit
+migrations locally, then just run `migrate` on the VM to apply them.
 
 `manage.py migrate` only applies schema changes - it doesn't migrate data. If
 you need existing data (users, playlist tracks) on a new machine, copy the
@@ -80,6 +107,37 @@ you need existing data (users, playlist tracks) on a new machine, copy the
 ```bash
 du -sh db.sqlite3
 ```
+
+<br>
+
+## 🚀 Deploying a Change
+
+**1️⃣ Use FTP to upload your code**
+
+**2️⃣ If you changed static files** run this
+**locally**, not on the VM (see **Design / Static Files** above):
+
+```bash
+PLATFORM=production python manage.py collectstatic --noinput
+```
+
+**3️⃣ On the VM**:
+
+FTP the new code to `/var/www/ttt/` and then run:
+
+```bash
+cd /var/www/ttt/
+
+source .venv/bin/activate
+
+# only if a model/field changed - see Database above
+python manage.py migrate
+
+systemctl restart ttt.service
+```
+
+Restarting Gunicorn is what actually loads your new code (`git pull` alone
+doesn't reload the running process). Nginx doesn't need a restart unless you edited its config.
 
 <br>
 
@@ -133,7 +191,7 @@ python display_users.py
 
 To change a user's first and last name, run the following command on the server:
 
-```bash
+```python
 python manage.py shell -c "
 from django.contrib.auth.models import User
 u = User.objects.get(username='local')

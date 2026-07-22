@@ -125,7 +125,7 @@ WSGI_APPLICATION = "tttracker.wsgi.application"
 
 
 SESSION_ENGINE = "django.contrib.sessions.backends.db" # Use the database for sessions
-SESSION_COOKIE_AGE = 5000
+SESSION_COOKIE_AGE = 60 * 60 * 24 * 180  # 180 days, matches Spotify's refresh token lifetime
 SESSION_EXPIRE_AT_BROWSER_CLOSE = False
 
 

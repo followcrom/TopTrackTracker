@@ -26,7 +26,11 @@ display_users.py
 .cache
 users.json
 .claude/
-
+launch_ttt.sh
 
 # Nginx file
 ttt
+
+# Static files
+static/
+

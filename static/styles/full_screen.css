@@ -23,14 +23,15 @@
   text-align: center;
 }
 
-.banner .fa-brands {
-  font-size: 6vw;
-  color: #1db954;
+.banner .banner-logo {
+  width: 6vw;
+  height: 6vw;
+  vertical-align: middle;
   background-color: #fff;
-  border: #fff solid 4px;
+  border: #2fff9b solid 4px;
   padding: 4px;
   border-radius: 180px;
-  margin: 10px;
+  margin: 20px;
 }
 
 /* Navbar Styles */

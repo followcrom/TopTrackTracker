@@ -66,6 +66,14 @@ width: 4%;
   .trend_table th, .trend_table td {
     padding: 5px;
   }
+
+  /* Low-value columns dropped to stop horizontal scroll on narrow screens */
+  .trend_table th.source,
+  .trend_table td.source,
+  .trend_table th.uris,
+  .trend_table td.uris {
+    display: none;
+  }
 }
 
 /* End Table Styles */

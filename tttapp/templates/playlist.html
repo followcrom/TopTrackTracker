@@ -68,6 +68,18 @@
     white-space: nowrap;
     font-weight: bold;
   }
+
+  /* On narrow screens, only Play and Create are shown here. */
+  @media (max-width: 768px) {
+    .topRow .shuffle-form,
+    .topRow .delete-all-form {
+      display: none;
+    }
+
+    .playlist-controls {
+      text-align: center;
+    }
+  }
 </style>
 
 <div id="message-area">{{ message }}</div>
@@ -77,7 +89,7 @@
     Play in Spotify
   </button>
 
-  <form action="{% url 'shuffle_playlist_tracks' %}" method="post">
+  <form class="shuffle-form" action="{% url 'shuffle_playlist_tracks' %}" method="post">
     {% csrf_token %}
     <button type="submit" class="button" style="color: orange">
       Shuffle
@@ -88,7 +100,7 @@
     Create Playlist
   </button>
 
-  <form action="{% url 'delete_all_playlist_tracks' %}" method="post">
+  <form class="delete-all-form" action="{% url 'delete_all_playlist_tracks' %}" method="post">
     {% csrf_token %}
     <button type="submit" class="button" style="color: red"
       onclick="return confirm('Are you sure you want to delete all tracks?')">
@@ -104,7 +116,7 @@
     <th>Artist</th>
     <th>Song</th>
     <th class="popularity">Popularity</th>
-    <th>Listen</th>
+    <th class="uris">Listen</th>
     <th class="delete">Delete</th>
   </tr>
 

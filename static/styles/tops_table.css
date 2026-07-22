@@ -73,6 +73,16 @@
   .track_table td {
     padding: 5px;
   }
+
+  /* Low-value columns dropped to stop horizontal scroll on narrow screens */
+  .track_table th.album,
+  .track_table td.album,
+  .track_table th.release,
+  .track_table td.release,
+  .track_table th.uris,
+  .track_table td.uris {
+    display: none;
+  }
 }
 
 /* End Table Styles */

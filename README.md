@@ -6,20 +6,28 @@ Track your Spotify plays and generate a playlist from your top tracks and Last.f
 
 ## GitHub
 
-To make the local branch an exact copy of origin/SURFACE (discarding any local differences):
-
 ```bash
 git fetch origin
-git reset --hard origin/SURFACE
+git reset --hard origin/prp3
 ```
 
 If you want a normal pull/merge instead:
 
 ```bash
-git pull origin SURFACE
+git pull origin prp3
 ```
 
 ## Development / Local 👨🏻‍💻
+
+```bash
+./launch_ttt.sh
+```
+
+This fetches from GitHub, hard-resets to `origin/prp3`, activates the venv,
+and starts the dev server - all in one step.
+
+If you'd rather skip the git reset and just run the server against what's
+already checked out locally:
 
 ```bash
 source .venv/bin/activate
@@ -141,6 +149,50 @@ doesn't reload the running process). Nginx doesn't need a restart unless you edi
 
 <br>
 
+## 🌿 `prd1` Branch
+
+Open an issue. Something like:
+
+Title: Sync prd1 with main
+
+Body:
+Merge origin/main into prd1 and resolve the expected modify/delete conflicts.
+
+Steps:
+1. Fetch origin, check out prd1, and merge origin/main into it.
+2. prd1 intentionally excludes these paths (see README's "prd1 Branch"
+   section): .github/, static/, tttapp/tests.py, CLAUDE.md, README.md.
+   For any modify/delete conflict on those paths, keep the deletion
+   (git rm <path>) rather than restoring the file.
+3. Complete the merge commit.
+4. Push to a new branch (e.g. sync-prd1-<date>) and open a PR into prd1
+   for review - don't push directly to prd1.
+
+One thing worth flagging: the workflow grants contents: write and pull-requests: write, so it's technically capable of pushing straight to prd1 if you word the issue that way — I'd stick with "open a PR" (as above) so you get a review step before anything lands on the branch the VM pulls from.
+
+---
+
+`prd1` is a lean copy of `main` for the VM to pull from - it strips out
+everything that isn't needed to actually run the app in production
+(`.github/`, `static/` since that's served from S3, `tttapp/tests.py`,
+`CLAUDE.md`, `README.md`), so a `git pull` on the VM doesn't drag in dev-only
+bloat. You can browse `prd1` on GitHub to see exactly what's on the VM.
+
+Because `prd1` deliberately diverges from `main` on those paths, merging
+`main` into `prd1` will hit a **modify/delete conflict** whenever a merged
+commit touches one of the removed files (e.g. an edit to something under
+`static/`). This is expected, not a bug - resolve it by re-deleting the path
+and continuing the merge:
+
+```bash
+git merge main
+# CONFLICT (modify/delete): static/styles/full_screen.css deleted in HEAD...
+git rm static/styles/full_screen.css   # repeat for any other conflicting paths
+git commit
+```
+
+<br>
+
 ## Users 🙋🏻
 
 ### Superuser / Admin 👱🏻‍♀️
@@ -187,7 +239,9 @@ To list all users, you can either:
 python display_users.py
 ```
 
-`display_users.py` also shows the Django settings module, which is useful for troubleshooting.
+Running `display_users.py` also triggers `settings.py`'s own startup prints
+(`.env` file status, which `PLATFORM` it's running on), which is useful for
+troubleshooting.
 
 To change a user's first and last name, run the following command on the server:
 
@@ -283,7 +337,7 @@ server {
 ### Logs 🪵
 
 ```bash
-journalctl -u gunicorn -f
+journalctl -u ttt.service -f
 tail -f /var/log/nginx/error.log
 ```
 
@@ -301,7 +355,7 @@ truncate -s 0 /var/www/ttt/logs/ttt_error.log
 **Verify both services are running:**
 
 ```bash
-systemctl status gunicorn
+systemctl status ttt.service
 systemctl status nginx
 ```
 

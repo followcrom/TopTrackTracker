@@ -9,6 +9,7 @@ import io
 import logging
 import random
 import re
+import socket
 
 from django.conf import settings
 from django.contrib.auth.decorators import login_required
@@ -137,12 +138,15 @@ def _tracks_to_csv(tracks):
 
 
 def _next_playlist_name():
+    prefix = socket.gethostname()
     highest = 0
-    for name in CreatedPlaylist.objects.values_list("name", flat=True):
-        match = re.fullmatch(r"TTT_(\d+)", name)
+    for name in CreatedPlaylist.objects.filter(name__startswith=f"{prefix}_").values_list(
+        "name", flat=True
+    ):
+        match = re.fullmatch(rf"{re.escape(prefix)}_(\d+)", name)
         if match:
             highest = max(highest, int(match.group(1)))
-    return f"TTT_{highest + 1}"
+    return f"{prefix}_{highest + 1}"
 
 
 @login_required
